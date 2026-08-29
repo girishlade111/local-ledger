@@ -3,6 +3,7 @@ import { ClientOnly, createFileRoute, Link, useNavigate } from "@tanstack/react-
 import { format } from "date-fns";
 import { toast } from "sonner";
 import {
+  AlertTriangle,
   ArrowLeft,
   Building2,
   Calendar,
@@ -22,6 +23,16 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { EmptyState } from "@/components/EmptyState";
 import { InvoiceForm } from "@/components/InvoiceForm";
 import { StatusBadge, getEffectiveStatus } from "@/components/InvoiceList";
@@ -54,17 +65,46 @@ const statuses: Array<{
   { value: "overdue", label: "Overdue", icon: Clock },
 ];
 
+function InvoiceSkeleton() {
+  return (
+    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
+      <div className="flex items-center justify-between border-b border-border/70 pb-4">
+        <div className="h-4 w-32 rounded bg-muted animate-pulse" />
+        <div className="flex gap-2">
+          <div className="h-8 w-20 rounded bg-muted animate-pulse" />
+          <div className="h-8 w-28 rounded bg-muted animate-pulse" />
+        </div>
+      </div>
+      <div className="h-14 rounded-lg bg-muted/40 animate-pulse" />
+      <div className="rounded-xl border border-border bg-card p-8 sm:p-12 shadow-paper space-y-8">
+        <div className="flex justify-between border-b border-border/80 pb-6">
+          <div className="space-y-2">
+            <div className="h-6 w-40 rounded bg-muted animate-pulse" />
+            <div className="h-4 w-56 rounded bg-muted/60 animate-pulse" />
+          </div>
+          <div className="space-y-2 text-right">
+            <div className="h-8 w-28 rounded bg-muted animate-pulse ml-auto" />
+            <div className="h-4 w-20 rounded bg-muted/60 animate-pulse ml-auto" />
+          </div>
+        </div>
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex justify-between py-2 border-b border-border/40">
+              <div className="h-4 w-60 rounded bg-muted/60 animate-pulse" />
+              <div className="h-4 w-16 rounded bg-muted/60 animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function InvoiceDetailPage() {
   const { id } = Route.useParams();
 
   return (
-    <ClientOnly
-      fallback={
-        <div className="mx-auto max-w-4xl px-4 py-12 text-center text-muted-foreground">
-          <p className="text-sm font-medium animate-pulse">Loading invoice…</p>
-        </div>
-      }
-    >
+    <ClientOnly fallback={<InvoiceSkeleton />}>
       <InvoiceDetail id={id} />
     </ClientOnly>
   );
@@ -188,6 +228,9 @@ function InvoiceDetail({ id }: { id: string }) {
     }
   };
 
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
   const handleDownloadPdf = async () => {
     setDownloadingPdf(true);
     try {
@@ -201,17 +244,18 @@ function InvoiceDetail({ id }: { id: string }) {
     }
   };
 
-  const handleRemove = async () => {
-    if (!confirm(`Are you sure you want to delete invoice ${invoice.invoiceNumber}?`)) {
-      return;
-    }
+  const handleConfirmDelete = async () => {
+    setDeleting(true);
     try {
       await deleteInvoice(id);
       toast.success(`Invoice ${invoice.invoiceNumber} deleted`);
+      setDeleteConfirmOpen(false);
       navigate({ to: "/invoices" });
     } catch (err) {
       console.error(err);
       toast.error("Failed to delete invoice");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -278,8 +322,9 @@ function InvoiceDetail({ id }: { id: string }) {
           <Button
             size="sm"
             variant="ghost"
-            onClick={handleRemove}
+            onClick={() => setDeleteConfirmOpen(true)}
             className="text-xs text-destructive hover:bg-destructive/10 cursor-pointer"
+            title="Delete Invoice"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
@@ -491,6 +536,41 @@ function InvoiceDetail({ id }: { id: string }) {
           </div>
         )}
       </article>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2 text-destructive mb-1">
+              <AlertTriangle className="h-5 w-5" />
+              <AlertDialogTitle className="font-display text-lg">Delete Invoice?</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="space-y-2 pt-1 text-left">
+              <p className="text-sm text-foreground">
+                Are you sure you want to permanently delete invoice{" "}
+                <strong className="font-mono font-semibold text-foreground">
+                  #{invoice.invoiceNumber}
+                </strong>
+                ?
+              </p>
+              <p className="text-xs text-muted-foreground">
+                All line items, amounts, and metadata for this invoice will be removed from your
+                device. This action cannot be undone.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Deleting…" : "Delete Invoice"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

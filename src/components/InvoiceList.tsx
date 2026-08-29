@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
 import {
+  AlertTriangle,
   ArrowUpDown,
   CheckCircle2,
   Copy,
@@ -35,6 +36,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { EmptyState } from "@/components/EmptyState";
 import { listFullInvoices, type FullInvoice } from "@/db/full-invoice";
 import { deleteInvoice, duplicateInvoiceTransaction, updateInvoice } from "@/db/invoices";
@@ -97,6 +108,8 @@ export function InvoiceList() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<SortOption>("date_desc");
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [invoiceToDelete, setInvoiceToDelete] = useState<{ id: string; invoiceNumber: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const refresh = async () => {
     const list = await listFullInvoices();
@@ -221,27 +234,39 @@ export function InvoiceList() {
     }
   };
 
-  const handleDelete = async (id: string, invoiceNumber: string) => {
-    if (!confirm(`Are you sure you want to delete invoice ${invoiceNumber}?`)) {
-      return;
-    }
-    setActionLoadingId(id);
+  const handleConfirmDeleteInvoice = async () => {
+    if (!invoiceToDelete) return;
+    setDeleting(true);
     try {
-      await deleteInvoice(id);
-      toast.success(`Invoice ${invoiceNumber} deleted`);
+      await deleteInvoice(invoiceToDelete.id);
+      toast.success(`Invoice ${invoiceToDelete.invoiceNumber} deleted`);
+      setInvoiceToDelete(null);
       await refresh();
     } catch (err) {
       console.error(err);
       toast.error("Failed to delete invoice");
     } finally {
-      setActionLoadingId(null);
+      setDeleting(false);
     }
   };
 
   if (invoices === null) {
     return (
-      <div className="flex h-64 items-center justify-center rounded-xl border border-dashed border-border bg-card/40">
-        <p className="text-sm text-muted-foreground animate-pulse">Reading local database…</p>
+      <div className="space-y-4">
+        <div className="flex justify-between gap-4">
+          <div className="h-10 w-64 rounded-lg bg-muted/50 animate-pulse" />
+          <div className="h-10 w-48 rounded-lg bg-muted/50 animate-pulse" />
+        </div>
+        <div className="rounded-xl border border-border bg-card p-6 space-y-3 shadow-paper">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center justify-between py-2 border-b border-border/40">
+              <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+              <div className="h-4 w-40 bg-muted/60 animate-pulse rounded" />
+              <div className="h-4 w-20 bg-muted/60 animate-pulse rounded" />
+              <div className="h-4 w-16 bg-muted animate-pulse rounded" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -251,6 +276,7 @@ export function InvoiceList() {
       <EmptyState
         title="No invoices yet"
         description="Create and issue your first offline invoice to start tracking payments."
+        icon={<FileText className="h-6 w-6" />}
         action={
           <Button asChild className="gap-2 shadow-sm font-medium">
             <Link to="/invoices/new">
@@ -579,7 +605,12 @@ export function InvoiceList() {
                               <DropdownMenuSeparator />
 
                               <DropdownMenuItem
-                                onClick={() => handleDelete(invoice.id, invoice.invoiceNumber)}
+                                onClick={() =>
+                                  setInvoiceToDelete({
+                                    id: invoice.id,
+                                    invoiceNumber: invoice.invoiceNumber,
+                                  })
+                                }
                                 className="cursor-pointer gap-2 text-destructive focus:text-destructive"
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -607,6 +638,44 @@ export function InvoiceList() {
           </div>
         </div>
       )}
+
+      {/* Delete Invoice Confirmation Dialog */}
+      <AlertDialog
+        open={invoiceToDelete !== null}
+        onOpenChange={(open) => !open && setInvoiceToDelete(null)}
+      >
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2 text-destructive mb-1">
+              <AlertTriangle className="h-5 w-5" />
+              <AlertDialogTitle className="font-display text-lg">Delete Invoice?</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="space-y-2 pt-1 text-left">
+              <p className="text-sm text-foreground">
+                Are you sure you want to permanently delete invoice{" "}
+                <strong className="font-mono font-semibold text-foreground">
+                  #{invoiceToDelete?.invoiceNumber}
+                </strong>
+                ?
+              </p>
+              <p className="text-xs text-muted-foreground">
+                All line items and calculations associated with this invoice will be removed from
+                your local database. This action cannot be undone.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDeleteInvoice}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Deleting…" : "Delete Invoice"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

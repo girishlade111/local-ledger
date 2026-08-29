@@ -12,6 +12,34 @@ export const Route = createFileRoute("/invoices/new")({
   component: NewInvoicePage,
 });
 
+function InvoiceFormSkeleton() {
+  return (
+    <div className="grid gap-8 lg:grid-cols-12">
+      <div className="space-y-6 lg:col-span-8">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-paper space-y-4">
+          <div className="h-6 w-44 rounded bg-muted animate-pulse" />
+          <div className="h-10 w-full rounded bg-muted/60 animate-pulse" />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="h-10 rounded bg-muted/50 animate-pulse" />
+            <div className="h-10 rounded bg-muted/50 animate-pulse" />
+          </div>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-6 shadow-paper space-y-4">
+          <div className="h-6 w-36 rounded bg-muted animate-pulse" />
+          <div className="h-12 w-full rounded bg-muted/40 animate-pulse" />
+        </div>
+      </div>
+      <div className="space-y-6 lg:col-span-4">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-paper space-y-4">
+          <div className="h-6 w-36 rounded bg-muted animate-pulse" />
+          <div className="h-32 w-full rounded bg-muted/40 animate-pulse" />
+          <div className="h-11 w-full rounded bg-muted animate-pulse" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function NewInvoicePage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
@@ -34,16 +62,7 @@ function NewInvoicePage() {
         </p>
       </header>
 
-      <ClientOnly
-        fallback={
-          <div className="flex h-64 items-center justify-center rounded-xl border border-dashed border-border bg-card/50">
-            <div className="flex items-center gap-3 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              <p className="text-sm font-medium">Initializing invoice editor…</p>
-            </div>
-          </div>
-        }
-      >
+      <ClientOnly fallback={<InvoiceFormSkeleton />}>
         <InvoiceForm />
       </ClientOnly>
     </div>

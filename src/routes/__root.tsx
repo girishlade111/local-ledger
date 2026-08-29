@@ -80,14 +80,28 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Local Ledger — 100% Private Offline Invoicing" },
+      {
+        name: "description",
+        content:
+          "Private, fast, 100% client-side offline invoicing for freelancers and small businesses. Zero cloud tracking, instant PDF export, multi-currency, and encrypted backups.",
+      },
+      { name: "keywords", content: "offline invoice, private invoicing, freelancer invoice, local ledger, pdf invoice, client side" },
+      { name: "author", content: "Local Ledger" },
+      { property: "og:title", content: "Local Ledger — 100% Private Offline Invoicing" },
+      {
+        property: "og:description",
+        content:
+          "Fast, 100% client-side offline invoicing for freelancers and small businesses. All data stays strictly on your device.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Local Ledger — 100% Private Offline Invoicing" },
+      {
+        name: "twitter:description",
+        content:
+          "Fast, 100% client-side offline invoicing for freelancers and small businesses. All data stays strictly on your device.",
+      },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -100,7 +114,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+      { rel: "alternate icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
   }),
   shellComponent: RootShell,

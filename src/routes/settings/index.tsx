@@ -79,6 +79,34 @@ export const Route = createFileRoute("/settings/")({
   component: SettingsPage,
 });
 
+function SettingsSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-8 lg:grid-cols-12">
+        <div className="space-y-6 lg:col-span-7">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="rounded-xl border border-border bg-card p-6 shadow-paper space-y-4"
+            >
+              <div className="h-6 w-40 rounded bg-muted animate-pulse" />
+              <div className="h-10 w-full rounded bg-muted/60 animate-pulse" />
+              <div className="h-20 w-full rounded bg-muted/40 animate-pulse" />
+            </div>
+          ))}
+        </div>
+        <div className="space-y-6 lg:col-span-5">
+          <div className="rounded-xl border border-border bg-card p-6 shadow-paper space-y-4">
+            <div className="h-6 w-36 rounded bg-muted animate-pulse" />
+            <div className="h-44 w-full rounded bg-muted/40 animate-pulse" />
+            <div className="h-10 w-full rounded bg-muted animate-pulse" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SettingsPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
@@ -99,16 +127,7 @@ function SettingsPage() {
         </div>
       </header>
 
-      <ClientOnly
-        fallback={
-          <div className="flex h-64 items-center justify-center rounded-xl border border-dashed border-border bg-card/50">
-            <div className="flex items-center gap-3 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              <p className="text-sm font-medium">Loading settings from local database…</p>
-            </div>
-          </div>
-        }
-      >
+      <ClientOnly fallback={<SettingsSkeleton />}>
         <SettingsForm />
       </ClientOnly>
     </div>
@@ -148,6 +167,8 @@ function SettingsForm() {
   // License State
   const [licenseInput, setLicenseInput] = useState("");
   const [validatingLicense, setValidatingLicense] = useState(false);
+  const [deactivateProConfirmOpen, setDeactivateProConfirmOpen] = useState(false);
+  const [deactivatingPro, setDeactivatingPro] = useState(false);
 
   // Backup & Restore State
   const backupFileInputRef = useRef<HTMLInputElement>(null);
@@ -188,14 +209,7 @@ function SettingsForm() {
   }, [settings, saving]);
 
   if (!settings) {
-    return (
-      <div className="flex h-64 items-center justify-center rounded-xl border border-dashed border-border bg-card/50">
-        <div className="flex items-center gap-3 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin text-primary" />
-          <p className="text-sm font-medium">Reading settings…</p>
-        </div>
-      </div>
-    );
+    return <SettingsSkeleton />;
   }
 
   const patch = (p: Partial<Settings>) => {
@@ -342,10 +356,8 @@ function SettingsForm() {
   };
 
   // License: Deactivation handler
-  const handleDeactivateLicense = async () => {
-    if (!confirm("Are you sure you want to deactivate PRO license on this device?")) {
-      return;
-    }
+  const handleConfirmDeactivateLicense = async () => {
+    setDeactivatingPro(true);
     try {
       const updated = await updateSettings({
         isPro: false,
@@ -356,10 +368,13 @@ function SettingsForm() {
       });
       setSettings(updated);
       setLicenseInput("");
+      setDeactivateProConfirmOpen(false);
       toast.info("PRO license deactivated.");
     } catch (err) {
       console.error(err);
       toast.error("Failed to deactivate license.");
+    } finally {
+      setDeactivatingPro(false);
     }
   };
 
@@ -515,6 +530,39 @@ function SettingsForm() {
                   Confirm & Restore
                 </>
               )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Deactivate PRO License Confirmation Dialog */}
+      <AlertDialog open={deactivateProConfirmOpen} onOpenChange={setDeactivateProConfirmOpen}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2 text-destructive mb-1">
+              <AlertTriangle className="h-5 w-5" />
+              <AlertDialogTitle className="font-display text-lg">
+                Deactivate PRO License?
+              </AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="space-y-2 pt-1 text-left">
+              <p className="text-sm text-foreground">
+                Are you sure you want to deactivate your PRO license on this browser?
+              </p>
+              <p className="text-xs text-muted-foreground">
+                All your invoice data will remain safe, but PRO features will be locked until you
+                reactivate.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel disabled={deactivatingPro}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDeactivateLicense}
+              disabled={deactivatingPro}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deactivatingPro ? "Deactivating…" : "Deactivate License"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -701,8 +749,8 @@ function SettingsForm() {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={handleDeactivateLicense}
-                        className="h-6 text-[11px] text-destructive hover:bg-destructive/10 px-2"
+                        onClick={() => setDeactivateProConfirmOpen(true)}
+                        className="h-6 text-[11px] text-destructive hover:bg-destructive/10 px-2 cursor-pointer"
                       >
                         Deactivate
                       </Button>

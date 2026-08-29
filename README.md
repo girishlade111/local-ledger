@@ -7,7 +7,9 @@
 
 ## 🌟 Highlights
 
-- **🔒 Zero-Knowledge & Offline-First**: All your invoices, clients, items, and settings are stored locally in the browser's IndexedDB via Dexie.js. No server calls, no trackers, zero data leakage.
+- **🔒 Zero-Knowledge & 100% Client-Side**: All invoices, clients, line items, and settings are stored exclusively in the browser's IndexedDB via Dexie.js. Zero API calls, zero tracking, zero server dependencies.
+- **⚡ Global Keyboard Shortcuts**: Press `Ctrl+N` (or `⌘N`) anywhere to create a new invoice instantly; press `Ctrl+S` (`⌘S`) to save invoices and settings.
+- **🛡️ Safe Destructive Actions**: Accessible confirmation dialogs (`AlertDialog`) for deleting clients, removing invoices, resetting settings, or deactivating licenses.
 - **📊 Real-time Financial Dashboard**: Real-time KPI summary cards, interactive 6-month revenue bar charts (powered by Recharts), recent invoice listings, and automated 30-day backup reminders.
 - **🧾 Comprehensive Invoice Lifecycle**: Draft, Sent, Paid, and Auto-detected Overdue status management with multi-criteria filtering, search, sorting, and quick duplication.
 - **📄 Professional A4 PDF Generator**: Pixel-perfect printable view and PDF download powered by `pdf-lib`, supporting business logo embedding, itemized tables, financial breakdowns, and custom color palettes.

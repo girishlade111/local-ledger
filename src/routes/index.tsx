@@ -47,15 +47,67 @@ export const Route = createFileRoute("/")({
   component: DashboardPage,
 });
 
+function DashboardSkeleton() {
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
+      {/* Header Skeleton */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-2">
+          <div className="h-8 w-44 rounded-lg bg-muted animate-pulse" />
+          <div className="h-4 w-72 rounded-md bg-muted/60 animate-pulse" />
+        </div>
+        <div className="flex gap-2">
+          <div className="h-9 w-28 rounded-md bg-muted animate-pulse" />
+          <div className="h-9 w-32 rounded-md bg-muted animate-pulse" />
+        </div>
+      </div>
+
+      {/* 4 KPI Cards Skeleton */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="rounded-xl border border-border bg-card p-5 shadow-paper space-y-3"
+          >
+            <div className="flex justify-between items-center">
+              <div className="h-3 w-24 rounded bg-muted/60 animate-pulse" />
+              <div className="h-7 w-7 rounded-lg bg-muted animate-pulse" />
+            </div>
+            <div className="h-7 w-28 rounded bg-muted animate-pulse" />
+            <div className="h-3 w-36 rounded bg-muted/40 animate-pulse" />
+          </div>
+        ))}
+      </div>
+
+      {/* Chart Skeleton */}
+      <div className="rounded-xl border border-border bg-card p-6 shadow-paper space-y-4">
+        <div className="flex justify-between items-center border-b border-border/60 pb-3">
+          <div className="h-5 w-32 rounded bg-muted animate-pulse" />
+          <div className="h-4 w-24 rounded bg-muted/60 animate-pulse" />
+        </div>
+        <div className="h-56 w-full rounded-lg bg-muted/30 animate-pulse" />
+      </div>
+
+      {/* Recent Invoices Table Skeleton */}
+      <div className="space-y-3">
+        <div className="h-6 w-36 rounded bg-muted animate-pulse" />
+        <div className="rounded-xl border border-border bg-card p-6 shadow-paper space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex justify-between py-2 border-b border-border/30">
+              <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+              <div className="h-4 w-32 bg-muted/60 animate-pulse rounded" />
+              <div className="h-4 w-16 bg-muted animate-pulse rounded" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function DashboardPage() {
   return (
-    <ClientOnly
-      fallback={
-        <div className="mx-auto max-w-6xl px-4 py-16 text-center text-muted-foreground">
-          <p className="text-sm font-medium animate-pulse">Loading dashboard overview…</p>
-        </div>
-      }
-    >
+    <ClientOnly fallback={<DashboardSkeleton />}>
       <DashboardContent />
     </ClientOnly>
   );
@@ -212,11 +264,7 @@ function DashboardContent() {
   };
 
   if (invoices === null || clients === null) {
-    return (
-      <div className="mx-auto max-w-6xl px-4 py-16 text-center text-muted-foreground">
-        <p className="text-sm font-medium animate-pulse">Reading local database…</p>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   const recentInvoices = invoices.slice(0, 5);

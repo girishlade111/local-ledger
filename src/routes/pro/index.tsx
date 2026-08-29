@@ -3,6 +3,7 @@ import { ClientOnly, createFileRoute, Link } from "@tanstack/react-router";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import {
+  AlertTriangle,
   ArrowLeft,
   Check,
   Coins,
@@ -24,6 +25,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { getSettings, updateSettings } from "@/db/settings";
 import { SAMPLE_PRO_KEYS, validateLicenseKey } from "@/utils/license";
 import type { Settings } from "@/types/settings";
@@ -42,15 +53,22 @@ export const Route = createFileRoute("/pro/")({
   component: ProPage,
 });
 
+function ProSkeleton() {
+  return (
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
+      <div className="h-4 w-32 rounded bg-muted animate-pulse" />
+      <div className="h-48 w-full rounded-2xl bg-muted/40 animate-pulse" />
+      <div className="h-56 w-full rounded-xl bg-card border border-border p-6 shadow-paper space-y-4">
+        <div className="h-6 w-44 rounded bg-muted animate-pulse" />
+        <div className="h-10 w-full rounded bg-muted/50 animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
 function ProPage() {
   return (
-    <ClientOnly
-      fallback={
-        <div className="mx-auto max-w-4xl px-4 py-16 text-center text-muted-foreground">
-          <p className="text-sm font-medium animate-pulse">Loading PRO features…</p>
-        </div>
-      }
-    >
+    <ClientOnly fallback={<ProSkeleton />}>
       <ProContent />
     </ClientOnly>
   );
@@ -60,6 +78,8 @@ function ProContent() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [licenseKeyInput, setLicenseKeyInput] = useState("");
   const [validating, setValidating] = useState(false);
+  const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
+  const [deactivating, setDeactivating] = useState(false);
 
   const refreshSettings = async () => {
     const s = await getSettings();
@@ -81,7 +101,6 @@ function ProContent() {
     }
 
     setValidating(true);
-    // Simulate brief instant validation feel
     setTimeout(async () => {
       const result = validateLicenseKey(key);
 
@@ -112,10 +131,8 @@ function ProContent() {
     }, 400);
   };
 
-  const handleDeactivate = async () => {
-    if (!confirm("Are you sure you want to deactivate PRO license on this device?")) {
-      return;
-    }
+  const handleConfirmDeactivate = async () => {
+    setDeactivating(true);
     try {
       const updated = await updateSettings({
         isPro: false,
@@ -126,19 +143,18 @@ function ProContent() {
       });
       setSettings(updated);
       setLicenseKeyInput("");
+      setDeactivateDialogOpen(false);
       toast.info("PRO license deactivated.");
     } catch (err) {
       console.error(err);
       toast.error("Failed to deactivate license.");
+    } finally {
+      setDeactivating(false);
     }
   };
 
   if (!settings) {
-    return (
-      <div className="mx-auto max-w-4xl px-4 py-16 text-center text-muted-foreground">
-        <p className="text-sm font-medium animate-pulse">Reading license data…</p>
-      </div>
-    );
+    return <ProSkeleton />;
   }
 
   const isPro = Boolean(settings.isPro);
@@ -232,7 +248,7 @@ function ProContent() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleDeactivate}
+                onClick={() => setDeactivateDialogOpen(true)}
                 className="text-xs text-destructive hover:bg-destructive/10 cursor-pointer"
               >
                 Deactivate License
@@ -424,6 +440,39 @@ function ProContent() {
           </div>
         </div>
       </section>
+
+      {/* Deactivate License Confirmation Dialog */}
+      <AlertDialog open={deactivateDialogOpen} onOpenChange={setDeactivateDialogOpen}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2 text-destructive mb-1">
+              <AlertTriangle className="h-5 w-5" />
+              <AlertDialogTitle className="font-display text-lg">
+                Deactivate PRO License?
+              </AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="space-y-2 pt-1 text-left">
+              <p className="text-sm text-foreground">
+                Are you sure you want to deactivate the PRO license on this device?
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Your stored invoices and clients will remain intact, but PRO features (such as
+                multi-currency and unbranded PDF exports) will be locked until reactivated.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel disabled={deactivating}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDeactivate}
+              disabled={deactivating}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deactivating ? "Deactivating…" : "Deactivate License"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
