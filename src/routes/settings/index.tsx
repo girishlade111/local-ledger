@@ -187,7 +187,7 @@ function SettingsForm() {
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleLogoFile(e.dataTransfer.files[0]);
     }
   };
@@ -326,7 +326,7 @@ function SettingsForm() {
                 accept="image/png,image/jpeg,image/webp,image/svg+xml"
                 className="hidden"
                 onChange={(e) => {
-                  if (e.target.files && e.target.files.length > 0) {
+                  if (e.target.files && e.target.files[0]) {
                     handleLogoFile(e.target.files[0]);
                   }
                 }}

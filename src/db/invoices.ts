@@ -91,8 +91,52 @@ export async function createInvoiceTransaction(data: CreateInvoicePayload): Prom
       await db.settings.update("app-settings", {
         nextInvoiceNumber: (currentSettings.nextInvoiceNumber || 1) + 1,
       });
+    } else {
+      await db.settings.put({
+        id: "app-settings",
+        businessName: "",
+        businessAddress: "",
+        businessLogo: "",
+        taxRate: data.taxRate ?? 0,
+        defaultCurrency: data.currency || "USD",
+        invoicePrefix: "INV",
+        nextInvoiceNumber: 2,
+      });
     }
   });
 
   return invoice;
 }
+
+export async function duplicateInvoiceTransaction(sourceInvoiceId: string): Promise<Invoice> {
+  const sourceInvoice = await db.invoices.get(sourceInvoiceId);
+  if (!sourceInvoice) throw new Error("Invoice not found");
+
+  const sourceItems = await db.invoiceItems.where("invoiceId").equals(sourceInvoiceId).toArray();
+  const settings = (await db.settings.get("app-settings")) || {
+    invoicePrefix: "INV",
+    nextInvoiceNumber: 1,
+  };
+
+  const newNumber = formatInvoiceNumber(
+    settings.invoicePrefix || "INV",
+    settings.nextInvoiceNumber || 1,
+  );
+
+  return createInvoiceTransaction({
+    invoiceNumber: newNumber,
+    clientId: sourceInvoice.clientId,
+    status: "draft",
+    issueDate: new Date().toISOString().split("T")[0] || "2026-01-01",
+    dueDate: sourceInvoice.dueDate,
+    currency: sourceInvoice.currency || "USD",
+    taxRate: sourceInvoice.taxRate ?? 0,
+    notes: sourceInvoice.notes || "",
+    items: sourceItems.map((item) => ({
+      description: item.description,
+      quantity: item.quantity,
+      rate: item.rate,
+    })),
+  });
+}
+

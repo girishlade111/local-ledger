@@ -11,7 +11,7 @@ const navItems = [
   { to: "/settings", label: "Settings", icon: "Settings" },
 ] as const;
 
-function NavList({ onNavigate }: { onNavigate?: () => void }) {
+function NavList({ onNavigate }: { onNavigate?: (() => void) | undefined }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
   return (
     <nav className="flex flex-col gap-1">

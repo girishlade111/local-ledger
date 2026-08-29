@@ -11,14 +11,21 @@ export const Route = createFileRoute("/invoices/")({
 
 function InvoicesPage() {
   return (
-    <div className="mx-auto max-w-4xl px-6 py-10">
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
       <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl tracking-tight">Invoices</h1>
-          <p className="mt-2 text-sm text-muted-foreground">All invoices stored on this device.</p>
+          <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+            Invoices
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Manage, track, and issue offline invoices stored locally on your device.
+          </p>
         </div>
-        <Button asChild>
-          <Link to="/invoices/new">New invoice</Link>
+        <Button asChild className="gap-1.5 shadow-sm">
+          <Link to="/invoices/new">
+            <span className="text-base leading-none">+</span>
+            New invoice
+          </Link>
         </Button>
       </header>
 

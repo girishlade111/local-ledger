@@ -253,7 +253,16 @@ export function InvoiceForm() {
               </div>
 
               <div className="flex gap-2">
-                <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+                <Select
+                  value={selectedClientId}
+                  onValueChange={(val) => {
+                    if (val === "__new_client__") {
+                      setCreateClientOpen(true);
+                    } else {
+                      setSelectedClientId(val);
+                    }
+                  }}
+                >
                   <SelectTrigger id="client-select" className="bg-background/80 flex-1">
                     <SelectValue placeholder="Select an existing client…">
                       {selectedClient ? (
@@ -270,12 +279,21 @@ export function InvoiceForm() {
                       )}
                     </SelectValue>
                   </SelectTrigger>
-                  <SelectContent className="max-h-64">
+                  <SelectContent className="max-h-72">
                     <SelectGroup>
+                      <SelectItem
+                        value="__new_client__"
+                        className="font-medium text-primary cursor-pointer border-b border-border/50 pb-2 mb-1"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Plus className="h-4 w-4" />
+                          <span>+ Add new client</span>
+                        </div>
+                      </SelectItem>
                       <SelectLabel>Existing Clients</SelectLabel>
                       {clients.length === 0 ? (
                         <div className="px-2 py-3 text-center text-xs text-muted-foreground">
-                          No clients saved yet. Click "+ Add new client" below.
+                          No clients saved yet. Select "+ Add new client" above.
                         </div>
                       ) : (
                         clients.map((client) => (

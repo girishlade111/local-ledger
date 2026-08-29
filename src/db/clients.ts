@@ -6,8 +6,15 @@ export const listClients = () => db.clients.orderBy("createdAt").reverse().toArr
 
 export const getClient = (id: string) => db.clients.get(id);
 
-export const createClient = (input: Omit<Client, "id" | "createdAt">) =>
-  db.clients.put({ ...input, id: uuid(), createdAt: new Date().toISOString() });
+export const createClient = async (input: Omit<Client, "id" | "createdAt">): Promise<Client> => {
+  const client: Client = {
+    ...input,
+    id: uuid(),
+    createdAt: new Date().toISOString(),
+  };
+  await db.clients.put(client);
+  return client;
+};
 
 export const updateClient = (id: string, patch: Partial<Client>) => db.clients.update(id, patch);
 
