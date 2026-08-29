@@ -81,7 +81,7 @@ export function InvoiceForm() {
       });
     }
     await updateSettings({ nextInvoiceNumber: settings.nextInvoiceNumber + 1 });
-    navigate({ to: "/" });
+    navigate({ to: "/invoices" });
   }
 
   return (
@@ -206,7 +206,7 @@ export function InvoiceForm() {
         <Button type="submit" disabled={saving}>
           {saving ? "Saving…" : "Save invoice"}
         </Button>
-        <Button type="button" variant="ghost" onClick={() => navigate({ to: "/" })}>
+        <Button type="button" variant="ghost" onClick={() => navigate({ to: "/invoices" })}>
           Cancel
         </Button>
       </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/EmptyState";
 import { deleteInvoice } from "@/db/invoices";
 import { listFullInvoices, type FullInvoice } from "@/db/full-invoice";
 import { invoiceTotal } from "@/types/invoice";
@@ -21,15 +22,15 @@ export function InvoiceList() {
 
   if (invoices.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-border bg-card p-10 text-center">
-        <h2 className="text-xl">No invoices yet</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Everything you create stays in this browser — nothing is uploaded.
-        </p>
-        <Button asChild className="mt-5">
-          <Link to="/new">Create your first invoice</Link>
-        </Button>
-      </div>
+      <EmptyState
+        title="No invoices yet"
+        description="Create your first invoice to get started."
+        action={
+          <Button asChild>
+            <Link to="/invoices/new">New invoice</Link>
+          </Button>
+        }
+      />
     );
   }
 
@@ -40,13 +41,19 @@ export function InvoiceList() {
           key={invoice.id}
           className="flex flex-wrap items-center gap-4 rounded-lg border border-border bg-card p-4 shadow-paper"
         >
-          <div className="min-w-40 flex-1">
-            <p className="font-display text-lg">{invoice.client?.name || "Untitled client"}</p>
+          <Link
+            to="/invoices/$id"
+            params={{ id: invoice.id }}
+            className="min-w-40 flex-1"
+          >
+            <p className="font-display text-lg hover:underline">
+              {invoice.client?.name || "Untitled client"}
+            </p>
             <p className="text-xs text-muted-foreground">
               {invoice.invoiceNumber} · issued {shortDate(invoice.issueDate)} · due{" "}
               {shortDate(invoice.dueDate)}
             </p>
-          </div>
+          </Link>
           <p className="font-display text-lg">{money(invoiceTotal(invoice.items))}</p>
           <div className="flex gap-2">
             <Button size="sm" variant="secondary" onClick={() => downloadInvoicePdf(invoice)}>
