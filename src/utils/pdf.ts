@@ -4,6 +4,20 @@ import { getSettings } from "@/db/settings";
 import type { Settings } from "@/types/settings";
 import { money, shortDate } from "./format";
 
+function hexToPdfRgb(hex?: string) {
+  if (!hex || !hex.startsWith("#") || (hex.length !== 7 && hex.length !== 4)) {
+    return rgb(0.12, 0.25, 0.2); // default slate/forest
+  }
+  const clean = hex.slice(1);
+  const c0 = clean.charAt(0) || "0";
+  const c1 = clean.charAt(1) || "0";
+  const c2 = clean.charAt(2) || "0";
+  const r = parseInt(clean.length === 3 ? c0 + c0 : clean.substring(0, 2), 16) / 255;
+  const g = parseInt(clean.length === 3 ? c1 + c1 : clean.substring(2, 4), 16) / 255;
+  const b = parseInt(clean.length === 3 ? c2 + c2 : clean.substring(4, 6), 16) / 255;
+  return rgb(isNaN(r) ? 0.12 : r, isNaN(g) ? 0.25 : g, isNaN(b) ? 0.2 : b);
+}
+
 export async function invoiceToPdfBlob(invoice: FullInvoice, customSettings?: Settings) {
   const settings = customSettings || (await getSettings());
   const doc = await PDFDocument.create();
@@ -11,8 +25,11 @@ export async function invoiceToPdfBlob(invoice: FullInvoice, customSettings?: Se
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
 
-  // Palette
-  const colorPrimary = rgb(0.12, 0.25, 0.2); // deep slate/forest
+  // Palette: support PRO custom accent color
+  const colorPrimary =
+    settings.isPro && settings.customPdfColor
+      ? hexToPdfRgb(settings.customPdfColor)
+      : rgb(0.12, 0.25, 0.2); // deep slate/forest
   const colorDark = rgb(0.1, 0.12, 0.15); // near black for primary text
   const colorMuted = rgb(0.42, 0.46, 0.52); // slate gray
   const colorLightBorder = rgb(0.88, 0.9, 0.92); // light border
@@ -345,20 +362,23 @@ export async function invoiceToPdfBlob(invoice: FullInvoice, customSettings?: Se
     });
   }
 
-  // Bottom Branding Line
-  page.drawLine({
-    start: { x: margin, y: 40 },
-    end: { x: margin + contentWidth, y: 40 },
-    thickness: 0.5,
-    color: colorLightBorder,
-  });
+  // Bottom Branding Line / Watermark (Omitted for PRO users with hidePdfWatermark enabled)
+  const showWatermark = !settings.isPro || settings.hidePdfWatermark === false;
+  if (showWatermark) {
+    page.drawLine({
+      start: { x: margin, y: 40 },
+      end: { x: margin + contentWidth, y: 40 },
+      thickness: 0.5,
+      color: colorLightBorder,
+    });
 
-  drawText("Generated via Local Ledger · Offline-First Invoicing", {
-    x: margin,
-    y: 28,
-    size: 7.5,
-    color: colorMuted,
-  });
+    drawText("Made with Local Ledger · Offline-First Invoicing", {
+      x: margin,
+      y: 28,
+      size: 7.5,
+      color: colorMuted,
+    });
+  }
 
   const bytes = await doc.save();
   return new Blob([bytes as unknown as BlobPart], { type: "application/pdf" });

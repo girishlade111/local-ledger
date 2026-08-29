@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { addDays, format, parseISO } from "date-fns";
 import { v4 as uuid } from "uuid";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import {
   ChevronDown,
   Clock,
   Coins,
+  Crown,
   FileDigit,
   FileText,
   Loader2,
@@ -440,12 +441,41 @@ export function InvoiceForm({
                 </p>
               </div>
 
-              {/* Currency */}
+              {/* Currency (Multi-Currency is a PRO feature) */}
               <div className="space-y-2">
-                <Label htmlFor="invoice-currency" className="text-sm font-medium">
-                  Currency
-                </Label>
-                <Select value={currency} onValueChange={setCurrency}>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="invoice-currency" className="text-sm font-medium">
+                    Currency
+                  </Label>
+                  {!settings?.isPro && (
+                    <Link
+                      to="/pro"
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
+                    >
+                      <Crown className="h-3 w-3" />
+                      PRO Multi-Currency
+                    </Link>
+                  )}
+                </div>
+                <Select
+                  value={currency}
+                  onValueChange={(val) => {
+                    const defaultCurr = settings?.defaultCurrency || "USD";
+                    if (!settings?.isPro && val !== defaultCurr) {
+                      toast.error(
+                        "Multi-currency per invoice is a PRO feature. Upgrade to PRO to unlock 25+ currencies.",
+                        {
+                          action: {
+                            label: "Upgrade",
+                            onClick: () => navigate({ to: "/pro" }),
+                          },
+                        },
+                      );
+                      return;
+                    }
+                    setCurrency(val);
+                  }}
+                >
                   <SelectTrigger id="invoice-currency" className="bg-background/80 w-full">
                     <SelectValue placeholder="Currency">
                       {activeCurrency.code} ({activeCurrency.symbol})
@@ -458,6 +488,11 @@ export function InvoiceForm({
                         <SelectItem key={curr.code} value={curr.code} className="cursor-pointer">
                           <span className="font-mono font-medium">{curr.code}</span> ({curr.symbol})
                           — {curr.name}
+                          {!settings?.isPro && curr.code !== (settings?.defaultCurrency || "USD") && (
+                            <span className="ml-2 rounded bg-primary/10 px-1.5 py-0.2 text-[10px] font-semibold text-primary">
+                              PRO
+                            </span>
+                          )}
                         </SelectItem>
                       ))}
                     </SelectGroup>

@@ -1,14 +1,16 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Menu } from "lucide-react";
+import { Crown, Menu, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { getSettings } from "@/db/settings";
 
 const navItems = [
-  { to: "/", label: "Dashboard", icon: "Dashboard" },
-  { to: "/invoices", label: "Invoices", icon: "Invoices" },
-  { to: "/clients", label: "Clients", icon: "Clients" },
-  { to: "/settings", label: "Settings", icon: "Settings" },
+  { to: "/", label: "Dashboard" },
+  { to: "/invoices", label: "Invoices" },
+  { to: "/clients", label: "Clients" },
+  { to: "/settings", label: "Settings" },
+  { to: "/pro", label: "PRO Features ⭐" },
 ] as const;
 
 function NavList({ onNavigate }: { onNavigate?: (() => void) | undefined }) {
@@ -38,17 +40,45 @@ function NavList({ onNavigate }: { onNavigate?: (() => void) | undefined }) {
 }
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+  const [isPro, setIsPro] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    getSettings().then((s) => setIsPro(Boolean(s.isPro)));
+  }, []);
+
   return (
     <div className="flex h-full flex-col gap-6 p-4">
-      <div className="px-2">
-        <h1 className="font-display text-xl tracking-tight text-sidebar-foreground">
-          Local Ledger
-        </h1>
-        <p className="text-xs text-muted-foreground">Offline invoicing</p>
+      <div className="px-2 flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-xl tracking-tight text-sidebar-foreground">
+            Local Ledger
+          </h1>
+          <p className="text-xs text-muted-foreground">Offline invoicing</p>
+        </div>
+        {isPro && (
+          <span className="rounded-full bg-primary/15 border border-primary/30 px-2 py-0.5 text-[10px] font-bold text-primary shadow-xs">
+            PRO ⭐
+          </span>
+        )}
       </div>
       <NavList onNavigate={onNavigate} />
-      <div className="mt-auto px-2 text-xs text-muted-foreground">
-        All data stays on this device.
+      <div className="mt-auto space-y-3 px-2">
+        {!isPro && (
+          <Link
+            to="/pro"
+            onClick={onNavigate}
+            className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/10 p-2.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/20 cursor-pointer shadow-xs"
+          >
+            <span className="flex items-center gap-1.5">
+              <Crown className="h-3.5 w-3.5" />
+              Upgrade to PRO
+            </span>
+            <Sparkles className="h-3 w-3 animate-pulse" />
+          </Link>
+        )}
+        <div className="text-[11px] text-muted-foreground">
+          All data stays on this device.
+        </div>
       </div>
     </div>
   );

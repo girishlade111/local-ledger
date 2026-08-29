@@ -1,4 +1,4 @@
-import { ClientOnly, createFileRoute } from "@tanstack/react-router";
+import { ClientOnly, createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { toast } from "sonner";
@@ -7,12 +7,16 @@ import {
   Building2,
   Check,
   Coins,
+  Crown,
   Download,
   DownloadCloud,
   Eye,
   FileDigit,
   HardDrive,
+  Key,
   Loader2,
+  Lock,
+  Palette,
   Percent,
   RotateCcw,
   Save,
@@ -21,6 +25,7 @@ import {
   Trash2,
   Upload,
   UploadCloud,
+  Zap,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -55,6 +60,10 @@ import {
   validateBackupData,
   type BackupData,
 } from "@/utils/backup";
+import {
+  SAMPLE_PRO_KEYS,
+  validateLicenseKey,
+} from "@/utils/license";
 import { CURRENCIES, getCurrencyByCode } from "@/utils/currencies";
 import type { Settings } from "@/types/settings";
 import { SETTINGS_ID } from "@/types/settings";
@@ -65,7 +74,7 @@ export const Route = createFileRoute("/settings/")({
       { title: "Settings — Local Ledger" },
       {
         name: "description",
-        content: "Manage your business details, default currency, invoice numbering, and backup data.",
+        content: "Manage your business details, default currency, invoice numbering, licensing, and backup data.",
       },
     ],
   }),
@@ -81,7 +90,7 @@ function SettingsPage() {
             Settings
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Configure your business identity, tax preferences, and manage offline data backups.
+            Configure your business identity, tax preferences, PRO license, and offline backups.
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -117,7 +126,19 @@ const DEFAULT_SETTINGS: Settings = {
   defaultCurrency: "USD",
   invoicePrefix: "INV-",
   nextInvoiceNumber: 1,
+  isPro: false,
+  customPdfColor: "#166534",
+  hidePdfWatermark: false,
 };
+
+const PDF_COLOR_PRESETS = [
+  { label: "Forest Slate (Default)", value: "#166534" },
+  { label: "Deep Navy", value: "#1e3a8a" },
+  { label: "Royal Indigo", value: "#4338ca" },
+  { label: "Emerald Green", value: "#047857" },
+  { label: "Crimson Ruby", value: "#991b1b" },
+  { label: "Charcoal Slate", value: "#334155" },
+];
 
 function SettingsForm() {
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -125,6 +146,10 @@ function SettingsForm() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // License State
+  const [licenseInput, setLicenseInput] = useState("");
+  const [validatingLicense, setValidatingLicense] = useState(false);
 
   // Backup & Restore State
   const backupFileInputRef = useRef<HTMLInputElement>(null);
@@ -141,6 +166,9 @@ function SettingsForm() {
       invoicePrefix: loaded.invoicePrefix ?? "INV-",
     };
     setSettings(normalized);
+    if (loaded.licenseKey) {
+      setLicenseInput(loaded.licenseKey);
+    }
   };
 
   useEffect(() => {
@@ -239,6 +267,12 @@ function SettingsForm() {
         defaultCurrency: currentSettings.defaultCurrency || "USD",
         invoicePrefix: currentSettings.invoicePrefix.trim() || "INV-",
         nextInvoiceNumber: Math.max(1, Number(currentSettings.nextInvoiceNumber) || 1),
+        isPro: currentSettings.isPro,
+        licenseKey: currentSettings.licenseKey,
+        proActivatedAt: currentSettings.proActivatedAt,
+        proTier: currentSettings.proTier,
+        customPdfColor: currentSettings.customPdfColor,
+        hidePdfWatermark: currentSettings.hidePdfWatermark,
       });
       setSettings(saved);
       setHasUnsavedChanges(false);
@@ -268,6 +302,66 @@ function SettingsForm() {
     } catch (err) {
       console.error(err);
       toast.error("Failed to reset settings.");
+    }
+  };
+
+  // License: Activation handler
+  const handleActivateLicense = (keyToActivate?: string) => {
+    const key = (keyToActivate || licenseInput).trim();
+    if (!key) {
+      toast.error("Please enter a license key.");
+      return;
+    }
+
+    setValidatingLicense(true);
+    setTimeout(async () => {
+      const result = validateLicenseKey(key);
+      if (!result.isValid) {
+        toast.error(result.error || "Invalid license key.");
+        setValidatingLicense(false);
+        return;
+      }
+
+      try {
+        const now = new Date().toISOString();
+        const updated = await updateSettings({
+          isPro: true,
+          licenseKey: key.toUpperCase(),
+          proActivatedAt: now,
+          proTier: result.tier || "LIFETIME",
+          hidePdfWatermark: true,
+        });
+        setSettings(updated);
+        setLicenseInput(key.toUpperCase());
+        toast.success(`Local Ledger PRO activated! (${result.tier} License)`);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to activate license.");
+      } finally {
+        setValidatingLicense(false);
+      }
+    }, 400);
+  };
+
+  // License: Deactivation handler
+  const handleDeactivateLicense = async () => {
+    if (!confirm("Are you sure you want to deactivate PRO license on this device?")) {
+      return;
+    }
+    try {
+      const updated = await updateSettings({
+        isPro: false,
+        licenseKey: "",
+        proActivatedAt: undefined,
+        proTier: undefined,
+        hidePdfWatermark: false,
+      });
+      setSettings(updated);
+      setLicenseInput("");
+      toast.info("PRO license deactivated.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to deactivate license.");
     }
   };
 
@@ -316,7 +410,6 @@ function SettingsForm() {
     };
     reader.readAsText(file);
 
-    // Reset file input so user can re-select same file if desired
     e.target.value = "";
   };
 
@@ -351,6 +444,8 @@ function SettingsForm() {
   const lastBackupText = settings.lastBackupDate
     ? formatDistanceToNow(parseISO(settings.lastBackupDate), { addSuffix: true })
     : null;
+
+  const isPro = Boolean(settings.isPro);
 
   return (
     <>
@@ -567,7 +662,169 @@ function SettingsForm() {
               </div>
             </section>
 
-            {/* Card 2: Financial Defaults */}
+            {/* Card 2: PRO License & Custom Branding */}
+            <section className="space-y-5 rounded-xl border-2 border-primary/40 bg-card p-6 shadow-paper transition-shadow hover:shadow-md">
+              <div className="flex items-center justify-between border-b border-border/70 pb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <Crown className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="font-display text-lg font-semibold tracking-tight text-foreground flex items-center gap-2">
+                      Local Ledger PRO
+                      {isPro && (
+                        <span className="rounded-full bg-primary/10 border border-primary/30 px-2 py-0.5 text-[10px] font-bold text-primary">
+                          ACTIVE ⭐
+                        </span>
+                      )}
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      Client-side offline license activation and premium branding.
+                    </p>
+                  </div>
+                </div>
+
+                <Button asChild variant="ghost" size="sm" className="text-xs text-primary gap-1">
+                  <Link to="/pro">
+                    {isPro ? "View Features" : "Upgrade to PRO →"}
+                  </Link>
+                </Button>
+              </div>
+
+              {isPro ? (
+                <div className="space-y-5">
+                  <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                        <ShieldCheck className="h-4 w-4" />
+                        PRO License Active ({settings.proTier || "LIFETIME"})
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleDeactivateLicense}
+                        className="h-6 text-[11px] text-destructive hover:bg-destructive/10 px-2"
+                      >
+                        Deactivate
+                      </Button>
+                    </div>
+                    <p className="font-mono text-muted-foreground">
+                      Key: {settings.licenseKey || "LLPRO-xxxx"}
+                    </p>
+                  </div>
+
+                  {/* PRO Unlocked Feature: Custom PDF Accent Color */}
+                  <div className="space-y-2 pt-1">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="pdf-color" className="text-sm font-medium flex items-center gap-1.5">
+                        <Palette className="h-4 w-4 text-primary" />
+                        Custom PDF Branding Accent Color
+                      </Label>
+                      <span className="text-[11px] font-mono text-muted-foreground">
+                        {settings.customPdfColor || "#166534"}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {PDF_COLOR_PRESETS.map((preset) => {
+                        const active = (settings.customPdfColor || "#166534") === preset.value;
+                        return (
+                          <button
+                            key={preset.value}
+                            type="button"
+                            onClick={() => patch({ customPdfColor: preset.value })}
+                            className={`flex items-center gap-2 rounded-lg border p-2 text-xs text-left transition-colors cursor-pointer ${
+                              active
+                                ? "border-primary bg-primary/10 font-semibold text-foreground"
+                                : "border-border/80 hover:bg-muted/40 text-muted-foreground"
+                            }`}
+                          >
+                            <span
+                              className="h-3.5 w-3.5 rounded-full shrink-0 shadow-xs border border-white/20"
+                              style={{ backgroundColor: preset.value }}
+                            />
+                            <span className="truncate">{preset.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* PRO Unlocked Feature: Hide PDF Watermark */}
+                  <div className="pt-2">
+                    <label className="flex items-center gap-2.5 cursor-pointer select-none rounded-lg border border-border/80 bg-background/50 p-3">
+                      <input
+                        type="checkbox"
+                        checked={settings.hidePdfWatermark ?? true}
+                        onChange={(e) => patch({ hidePdfWatermark: e.target.checked })}
+                        className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                      />
+                      <div className="space-y-0.5">
+                        <span className="text-xs font-semibold text-foreground block">
+                          Remove PDF Footer Watermark (White-Label)
+                        </span>
+                        <span className="text-[11px] text-muted-foreground block">
+                          Omit "Made with Local Ledger" footer from downloaded PDF invoices.
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="settings-license-input" className="text-xs font-medium">
+                      Enter License Key
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="settings-license-input"
+                        value={licenseInput}
+                        onChange={(e) => setLicenseInput(e.target.value)}
+                        placeholder="LLPRO-LIFETIME-XXXX-XXXXXX"
+                        className="font-mono text-xs uppercase bg-background"
+                      />
+                      <Button
+                        type="button"
+                        onClick={() => handleActivateLicense()}
+                        disabled={validatingLicense || !licenseInput.trim()}
+                        className="text-xs shrink-0 cursor-pointer shadow-xs gap-1.5"
+                      >
+                        {validatingLicense ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            Validating…
+                          </>
+                        ) : (
+                          <>
+                            <Zap className="h-3.5 w-3.5" />
+                            Activate
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Demo key hint */}
+                  <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1">
+                    <span>Try evaluation key:</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLicenseInput("LLPRO-DEMO-2026-ACTIVE");
+                        handleActivateLicense("LLPRO-DEMO-2026-ACTIVE");
+                      }}
+                      className="font-mono text-primary hover:underline cursor-pointer"
+                    >
+                      LLPRO-DEMO-2026-ACTIVE
+                    </button>
+                  </div>
+                </div>
+              )}
+            </section>
+
+            {/* Card 3: Financial Defaults */}
             <section className="space-y-5 rounded-xl border border-border bg-card p-6 shadow-paper transition-shadow hover:shadow-md">
               <div className="flex items-center gap-2.5 border-b border-border/70 pb-4">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -641,7 +898,7 @@ function SettingsForm() {
               </div>
             </section>
 
-            {/* Card 3: Invoice Numbering Sequence */}
+            {/* Card 4: Invoice Numbering Sequence */}
             <section className="space-y-5 rounded-xl border border-border bg-card p-6 shadow-paper transition-shadow hover:shadow-md">
               <div className="flex items-center gap-2.5 border-b border-border/70 pb-4">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -711,7 +968,7 @@ function SettingsForm() {
               </div>
             </section>
 
-            {/* Card 4: Backup & Restore (CRITICAL) */}
+            {/* Card 5: Backup & Restore (CRITICAL) */}
             <section className="space-y-5 rounded-xl border border-border bg-card p-6 shadow-paper transition-shadow hover:shadow-md">
               <div className="flex items-center gap-2.5 border-b border-border/70 pb-4">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -797,7 +1054,7 @@ function SettingsForm() {
               </div>
 
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Exporting creates a full JSON snapshot of all clients, invoices, items, and settings.
+                Exporting creates a full JSON snapshot of all clients, invoices, items, settings, and license data.
                 Keep regular backups to safeguard against accidental browser clearing.
               </p>
             </section>
