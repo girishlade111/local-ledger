@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { deleteInvoice, listInvoices } from "@/db/invoices";
-import { invoiceTotal, type Invoice } from "@/types/invoice";
+import { deleteInvoice } from "@/db/invoices";
+import { listFullInvoices, type FullInvoice } from "@/db/full-invoice";
+import { invoiceTotal } from "@/types/invoice";
 import { money, shortDate } from "@/utils/format";
 import { downloadInvoicePdf } from "@/utils/pdf";
 
 export function InvoiceList() {
-  const [invoices, setInvoices] = useState<Invoice[] | null>(null);
+  const [invoices, setInvoices] = useState<FullInvoice[] | null>(null);
 
-  const refresh = () => listInvoices().then(setInvoices);
+  const refresh = () => listFullInvoices().then(setInvoices);
   useEffect(() => {
     refresh();
   }, []);
@@ -40,13 +41,13 @@ export function InvoiceList() {
           className="flex flex-wrap items-center gap-4 rounded-lg border border-border bg-card p-4 shadow-paper"
         >
           <div className="min-w-40 flex-1">
-            <p className="font-display text-lg">{invoice.clientName || "Untitled client"}</p>
+            <p className="font-display text-lg">{invoice.client?.name || "Untitled client"}</p>
             <p className="text-xs text-muted-foreground">
-              {invoice.number} · issued {shortDate(invoice.issueDate)} · due{" "}
+              {invoice.invoiceNumber} · issued {shortDate(invoice.issueDate)} · due{" "}
               {shortDate(invoice.dueDate)}
             </p>
           </div>
-          <p className="font-display text-lg">{money(invoiceTotal(invoice))}</p>
+          <p className="font-display text-lg">{money(invoiceTotal(invoice.items))}</p>
           <div className="flex gap-2">
             <Button size="sm" variant="secondary" onClick={() => downloadInvoicePdf(invoice)}>
               PDF

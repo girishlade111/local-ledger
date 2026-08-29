@@ -1,15 +1,30 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { addDays, format } from "date-fns";
+import { v4 as uuid } from "uuid";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { emptyLineItem, nextInvoiceNumber, saveInvoice } from "@/db/invoices";
-import { invoiceTotal, type LineItem } from "@/types/invoice";
+import { createInvoice, nextInvoiceNumber } from "@/db/invoices";
+import { createInvoiceItem } from "@/db/invoice-items";
+import { createClient } from "@/db/clients";
+import { getSettings, updateSettings } from "@/db/settings";
+import { invoiceTotal } from "@/types/invoice";
+import type { InvoiceItem } from "@/types/invoice-item";
 import { money } from "@/utils/format";
 
 const today = () => format(new Date(), "yyyy-MM-dd");
+
+type DraftItem = Omit<InvoiceItem, "id" | "invoiceId"> & { id: string };
+
+const emptyItem = (): DraftItem => ({
+  id: uuid(),
+  description: "",
+  quantity: 1,
+  rate: 0,
+  amount: 0,
+});
 
 export function InvoiceForm() {
   const navigate = useNavigate();
@@ -19,20 +34,53 @@ export function InvoiceForm() {
   const [issueDate, setIssueDate] = useState(today());
   const [dueDate, setDueDate] = useState(format(addDays(new Date(), 14), "yyyy-MM-dd"));
   const [notes, setNotes] = useState("");
-  const [items, setItems] = useState<LineItem[]>([emptyLineItem()]);
+  const [items, setItems] = useState<DraftItem[]>([emptyItem()]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    nextInvoiceNumber().then(setNumber);
+    getSettings().then((s) =>
+      nextInvoiceNumber(s.invoicePrefix, s.nextInvoiceNumber).then(setNumber),
+    );
   }, []);
 
-  const patchItem = (id: string, patch: Partial<LineItem>) =>
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
+  const patchItem = (id: string, patch: Partial<DraftItem>) =>
+    setItems((prev) =>
+      prev.map((i) =>
+        i.id === id
+          ? { ...i, ...patch, amount: (patch.quantity ?? i.quantity) * (patch.rate ?? i.rate) }
+          : i,
+      ),
+    );
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    await saveInvoice({ number, clientName, clientEmail, issueDate, dueDate, notes, items });
+    const settings = await getSettings();
+    const client = await createClient({
+      name: clientName,
+      email: clientEmail,
+      address: "",
+      phone: "",
+    });
+    const invoice = await createInvoice({
+      invoiceNumber: number,
+      clientId: client.id,
+      status: "draft",
+      issueDate,
+      dueDate,
+      currency: settings.defaultCurrency,
+      notes,
+    });
+    for (const item of items) {
+      await createInvoiceItem({
+        invoiceId: invoice.id,
+        description: item.description,
+        quantity: item.quantity,
+        rate: item.rate,
+        amount: item.quantity * item.rate,
+      });
+    }
+    await updateSettings({ nextInvoiceNumber: settings.nextInvoiceNumber + 1 });
     navigate({ to: "/" });
   }
 
@@ -92,7 +140,7 @@ export function InvoiceForm() {
             type="button"
             variant="secondary"
             size="sm"
-            onClick={() => setItems((p) => [...p, emptyLineItem()])}
+            onClick={() => setItems((p) => [...p, emptyItem()])}
           >
             Add item
           </Button>
@@ -116,12 +164,12 @@ export function InvoiceForm() {
                 onChange={(e) => patchItem(item.id, { quantity: Number(e.target.value) })}
               />
               <Input
-                aria-label="Unit price"
+                aria-label="Rate"
                 type="number"
                 min={0}
                 step="0.01"
-                value={item.unitPrice}
-                onChange={(e) => patchItem(item.id, { unitPrice: Number(e.target.value) })}
+                value={item.rate}
+                onChange={(e) => patchItem(item.id, { rate: Number(e.target.value) })}
               />
               <Button
                 type="button"
@@ -137,7 +185,10 @@ export function InvoiceForm() {
         </div>
 
         <p className="text-right text-lg">
-          Total <span className="font-display font-semibold">{money(invoiceTotal({ items }))}</span>
+          Total{" "}
+          <span className="font-display font-semibold">
+            {money(invoiceTotal(items.map((i) => ({ ...i, invoiceId: "" }))))}
+          </span>
         </p>
       </section>
 

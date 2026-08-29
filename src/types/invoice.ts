@@ -1,21 +1,19 @@
-export interface LineItem {
-  id: string;
-  description: string;
-  quantity: number;
-  unitPrice: number;
-}
+import type { InvoiceItem } from "./invoice-item";
+
+export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue";
 
 export interface Invoice {
   id: string;
-  number: string;
-  clientName: string;
-  clientEmail: string;
+  invoiceNumber: string;
+  clientId: string;
+  status: InvoiceStatus;
   issueDate: string; // ISO
   dueDate: string; // ISO
+  currency: string;
   notes: string;
-  items: LineItem[];
   createdAt: string;
+  updatedAt: string;
 }
 
-export const invoiceTotal = (invoice: Pick<Invoice, "items">) =>
-  invoice.items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0);
+export const invoiceTotal = (items: InvoiceItem[]) =>
+  items.reduce((sum, i) => sum + i.quantity * i.rate, 0);

@@ -1,9 +1,9 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import type { Invoice } from "@/types/invoice";
+import type { FullInvoice } from "@/db/full-invoice";
 import { invoiceTotal } from "@/types/invoice";
 import { money, shortDate } from "./format";
 
-export async function invoiceToPdfBlob(invoice: Invoice) {
+export async function invoiceToPdfBlob(invoice: FullInvoice) {
   const doc = await PDFDocument.create();
   const page = doc.addPage([595, 842]);
   const font = await doc.embedFont(StandardFonts.Helvetica);
@@ -27,14 +27,14 @@ export async function invoiceToPdfBlob(invoice: Invoice) {
 
   text("INVOICE", { size: 24, bold: true });
   y -= 18;
-  text(invoice.number, { size: 11, color: soft });
+  text(invoice.invoiceNumber, { size: 11, color: soft });
 
   y = 720;
   text("Billed to", { bold: true });
   y -= 15;
-  text(invoice.clientName || "-");
+  text(invoice.client?.name ?? "-");
   y -= 13;
-  text(invoice.clientEmail || "", { color: soft });
+  text(invoice.client?.email ?? "", { color: soft });
 
   y = 720;
   text(`Issued: ${shortDate(invoice.issueDate)}`, { x: 400 });
@@ -44,7 +44,7 @@ export async function invoiceToPdfBlob(invoice: Invoice) {
   y = 650;
   text("Description", { bold: true });
   text("Qty", { x: 360, bold: true });
-  text("Unit", { x: 420, bold: true });
+  text("Rate", { x: 420, bold: true });
   text("Amount", { x: 500, bold: true });
   y -= 8;
   page.drawLine({
@@ -58,13 +58,13 @@ export async function invoiceToPdfBlob(invoice: Invoice) {
     y -= 20;
     text(item.description || "-");
     text(String(item.quantity), { x: 360 });
-    text(money(item.unitPrice), { x: 420 });
-    text(money(item.quantity * item.unitPrice), { x: 500 });
+    text(money(item.rate), { x: 420 });
+    text(money(item.amount), { x: 500 });
   }
 
   y -= 30;
   text("Total", { x: 420, bold: true, size: 12 });
-  text(money(invoiceTotal(invoice)), { x: 500, bold: true, size: 12 });
+  text(money(invoiceTotal(invoice.items)), { x: 500, bold: true, size: 12 });
 
   if (invoice.notes) {
     y -= 50;
@@ -77,12 +77,12 @@ export async function invoiceToPdfBlob(invoice: Invoice) {
   return new Blob([bytes as unknown as BlobPart], { type: "application/pdf" });
 }
 
-export async function downloadInvoicePdf(invoice: Invoice) {
+export async function downloadInvoicePdf(invoice: FullInvoice) {
   const blob = await invoiceToPdfBlob(invoice);
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${invoice.number || "invoice"}.pdf`;
+  a.download = `${invoice.invoiceNumber || "invoice"}.pdf`;
   a.click();
   URL.revokeObjectURL(url);
 }
