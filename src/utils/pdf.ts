@@ -54,17 +54,41 @@ export async function invoiceToPdfBlob(invoice: FullInvoice) {
     color: soft,
   });
 
+  const currency = invoice.currency || "USD";
+  const subtotal = invoice.items.reduce((s, i) => s + (i.quantity || 0) * (i.rate || 0), 0);
+  const taxRate = invoice.taxRate ?? 0;
+  const taxAmount = subtotal * (taxRate / 100);
+  const total = subtotal + taxAmount;
+
   for (const item of invoice.items) {
     y -= 20;
     text(item.description || "-");
     text(String(item.quantity), { x: 360 });
-    text(money(item.rate), { x: 420 });
-    text(money(item.amount), { x: 500 });
+    text(money(item.rate, currency), { x: 420 });
+    text(money(item.amount, currency), { x: 500 });
   }
 
-  y -= 30;
+  y -= 25;
+  page.drawLine({
+    start: { x: 360, y },
+    end: { x: 545, y },
+    thickness: 0.5,
+    color: soft,
+  });
+
+  if (taxRate > 0) {
+    y -= 18;
+    text("Subtotal", { x: 420, color: soft });
+    text(money(subtotal, currency), { x: 500 });
+
+    y -= 15;
+    text(`Tax (${taxRate}%)`, { x: 420, color: soft });
+    text(money(taxAmount, currency), { x: 500 });
+  }
+
+  y -= 20;
   text("Total", { x: 420, bold: true, size: 12 });
-  text(money(invoiceTotal(invoice.items)), { x: 500, bold: true, size: 12 });
+  text(money(total, currency), { x: 500, bold: true, size: 12 });
 
   if (invoice.notes) {
     y -= 50;

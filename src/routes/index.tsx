@@ -45,10 +45,10 @@ function DashboardContent() {
 
   const totalOutstanding = invoices
     .filter((i) => i.status !== "paid")
-    .reduce((sum, i) => sum + invoiceTotal(i.items), 0);
+    .reduce((sum, i) => sum + invoiceTotal(i.items, i.taxRate || 0), 0);
   const totalPaid = invoices
     .filter((i) => i.status === "paid")
-    .reduce((sum, i) => sum + invoiceTotal(i.items), 0);
+    .reduce((sum, i) => sum + invoiceTotal(i.items, i.taxRate || 0), 0);
   const overdueCount = invoices.filter((i) => i.status === "overdue").length;
 
   const recent = invoices.slice(0, 5);
@@ -104,7 +104,9 @@ function DashboardContent() {
                     {invoice.invoiceNumber} · issued {shortDate(invoice.issueDate)}
                   </p>
                 </div>
-                <p className="font-display text-lg">{money(invoiceTotal(invoice.items))}</p>
+                <p className="font-display text-lg">
+                  {money(invoiceTotal(invoice.items, invoice.taxRate || 0), invoice.currency)}
+                </p>
                 <Button asChild size="sm" variant="ghost">
                   <Link to="/invoices/$id" params={{ id: invoice.id }}>
                     View

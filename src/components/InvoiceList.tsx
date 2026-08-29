@@ -50,7 +50,9 @@ export function InvoiceList() {
               {shortDate(invoice.dueDate)}
             </p>
           </Link>
-          <p className="font-display text-lg">{money(invoiceTotal(invoice.items))}</p>
+          <p className="font-display text-lg">
+            {money(invoiceTotal(invoice.items, invoice.taxRate || 0), invoice.currency)}
+          </p>
           <div className="flex gap-2">
             <Button size="sm" variant="secondary" onClick={() => downloadInvoicePdf(invoice)}>
               PDF

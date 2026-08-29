@@ -57,7 +57,11 @@ function InvoiceDetail({ id }: { id: string }) {
     );
   }
 
-  const total = invoiceTotal(invoice.items);
+  const subtotal = invoice.items.reduce((s, i) => s + (i.quantity || 0) * (i.rate || 0), 0);
+  const taxRate = invoice.taxRate ?? 0;
+  const taxAmount = subtotal * (taxRate / 100);
+  const total = subtotal + taxAmount;
+  const currency = invoice.currency || "USD";
 
   async function changeStatus(status: InvoiceStatus) {
     await updateInvoice(id, { status });
@@ -121,16 +125,30 @@ function InvoiceDetail({ id }: { id: string }) {
           {invoice.items.map((item) => (
             <div key={item.id} className="grid grid-cols-[1fr_5rem_7rem_7rem] gap-2 text-sm">
               <span>{item.description || "-"}</span>
-              <span className="text-right">{item.quantity}</span>
-              <span className="text-right">{money(item.rate)}</span>
-              <span className="text-right">{money(item.amount)}</span>
+              <span className="text-right font-mono">{item.quantity}</span>
+              <span className="text-right font-mono">{money(item.rate, currency)}</span>
+              <span className="text-right font-mono font-medium">
+                {money(item.amount, currency)}
+              </span>
             </div>
           ))}
         </div>
-        <div className="mt-4 flex justify-end border-t border-border pt-4">
-          <div className="text-right">
-            <p className="text-sm text-muted-foreground">Total</p>
-            <p className="font-display text-2xl">{money(total)}</p>
+        <div className="mt-6 flex justify-end border-t border-border pt-4">
+          <div className="w-64 space-y-1.5 text-right text-sm">
+            <div className="flex justify-between text-muted-foreground">
+              <span>Subtotal</span>
+              <span className="font-mono">{money(subtotal, currency)}</span>
+            </div>
+            {taxRate > 0 && (
+              <div className="flex justify-between text-muted-foreground">
+                <span>Tax ({taxRate}%)</span>
+                <span className="font-mono">{money(taxAmount, currency)}</span>
+              </div>
+            )}
+            <div className="flex justify-between border-t border-border pt-2 text-base font-semibold">
+              <span className="font-display">Total</span>
+              <span className="font-display font-mono text-primary">{money(total, currency)}</span>
+            </div>
           </div>
         </div>
       </section>
