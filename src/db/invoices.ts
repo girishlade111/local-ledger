@@ -140,3 +140,55 @@ export async function duplicateInvoiceTransaction(sourceInvoiceId: string): Prom
   });
 }
 
+export interface UpdateInvoicePayload {
+  id: string;
+  invoiceNumber: string;
+  clientId: string;
+  status: InvoiceStatus;
+  issueDate: string;
+  dueDate: string;
+  currency: string;
+  taxRate?: number;
+  notes: string;
+  items: Array<{
+    description: string;
+    quantity: number;
+    rate: number;
+  }>;
+}
+
+export async function updateInvoiceTransaction(data: UpdateInvoicePayload): Promise<Invoice> {
+  const now = new Date().toISOString();
+
+  await db.transaction("rw", [db.invoices, db.invoiceItems], async () => {
+    await db.invoices.update(data.id, {
+      invoiceNumber: data.invoiceNumber,
+      clientId: data.clientId,
+      status: data.status,
+      issueDate: data.issueDate,
+      dueDate: data.dueDate,
+      currency: data.currency,
+      taxRate: data.taxRate ?? 0,
+      notes: data.notes,
+      updatedAt: now,
+    });
+
+    await db.invoiceItems.where("invoiceId").equals(data.id).delete();
+    for (const item of data.items) {
+      await db.invoiceItems.put({
+        id: uuid(),
+        invoiceId: data.id,
+        description: item.description,
+        quantity: item.quantity,
+        rate: item.rate,
+        amount: (Number(item.quantity) || 0) * (Number(item.rate) || 0),
+      });
+    }
+  });
+
+  const updated = await db.invoices.get(data.id);
+  if (!updated) throw new Error("Updated invoice not found");
+  return updated;
+}
+
+

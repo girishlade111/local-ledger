@@ -36,7 +36,12 @@ import {
 } from "@/components/ui/select";
 import { CreateClientDialog } from "@/components/CreateClientDialog";
 import { listClients } from "@/db/clients";
-import { createInvoiceTransaction, nextInvoiceNumber } from "@/db/invoices";
+import {
+  createInvoiceTransaction,
+  nextInvoiceNumber,
+  updateInvoiceTransaction,
+} from "@/db/invoices";
+import { getFullInvoice, type FullInvoice } from "@/db/full-invoice";
 import { getSettings } from "@/db/settings";
 import { CURRENCIES, getCurrencyByCode } from "@/utils/currencies";
 import type { Client } from "@/types/client";
@@ -56,34 +61,71 @@ const emptyItem = (): DraftItem => ({
   amount: 0,
 });
 
-export function InvoiceForm() {
+export interface InvoiceFormProps {
+  initialInvoiceId?: string;
+  initialData?: FullInvoice;
+  onSuccess?: (invoiceId: string) => void;
+  onCancel?: () => void;
+}
+
+export function InvoiceForm({
+  initialInvoiceId,
+  initialData,
+  onSuccess,
+  onCancel,
+}: InvoiceFormProps = {}) {
   const navigate = useNavigate();
   const [settings, setSettings] = useState<Settings | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
-  const [selectedClientId, setSelectedClientId] = useState<string>("");
+  const [selectedClientId, setSelectedClientId] = useState<string>(
+    initialData?.clientId || "",
+  );
   const [createClientOpen, setCreateClientOpen] = useState(false);
 
-  const [invoiceNumber, setInvoiceNumber] = useState("");
-  const [issueDate, setIssueDate] = useState(today());
-  const [dueDate, setDueDate] = useState(format(addDays(new Date(), 14), "yyyy-MM-dd"));
-  const [currency, setCurrency] = useState("USD");
-  const [taxRate, setTaxRate] = useState<number>(0);
-  const [notes, setNotes] = useState("");
-  const [items, setItems] = useState<DraftItem[]>([emptyItem()]);
+  const [invoiceNumber, setInvoiceNumber] = useState(initialData?.invoiceNumber || "");
+  const [issueDate, setIssueDate] = useState(initialData?.issueDate || today());
+  const [dueDate, setDueDate] = useState(
+    initialData?.dueDate || format(addDays(new Date(), 14), "yyyy-MM-dd"),
+  );
+  const [currency, setCurrency] = useState(initialData?.currency || "USD");
+  const [taxRate, setTaxRate] = useState<number>(initialData?.taxRate ?? 0);
+  const [notes, setNotes] = useState(initialData?.notes || "");
+  const [items, setItems] = useState<DraftItem[]>(
+    initialData?.items && initialData.items.length > 0
+      ? initialData.items.map((i) => ({ ...i, id: i.id || uuid() }))
+      : [emptyItem()],
+  );
   const [savingStatus, setSavingStatus] = useState<InvoiceStatus | null>(null);
+  const isEditing = Boolean(initialInvoiceId || initialData);
 
-  // Load settings & clients on mount
+  // Load settings & clients (and existing invoice if needed) on mount
   useEffect(() => {
-    Promise.all([getSettings(), listClients()]).then(([s, cList]) => {
+    Promise.all([
+      getSettings(),
+      listClients(),
+      initialInvoiceId && !initialData ? getFullInvoice(initialInvoiceId) : Promise.resolve(null),
+    ]).then(([s, cList, existingInv]) => {
       setSettings(s);
       setClients(cList);
-      setCurrency(s.defaultCurrency || "USD");
-      setTaxRate(s.taxRate || 0);
 
-      // Auto-generate invoice number
-      nextInvoiceNumber(s.invoicePrefix, s.nextInvoiceNumber).then(setInvoiceNumber);
+      if (existingInv) {
+        setSelectedClientId(existingInv.clientId || "");
+        setInvoiceNumber(existingInv.invoiceNumber || "");
+        setIssueDate(existingInv.issueDate || today());
+        setDueDate(existingInv.dueDate || format(addDays(new Date(), 14), "yyyy-MM-dd"));
+        setCurrency(existingInv.currency || s.defaultCurrency || "USD");
+        setTaxRate(existingInv.taxRate ?? 0);
+        setNotes(existingInv.notes || "");
+        if (existingInv.items && existingInv.items.length > 0) {
+          setItems(existingInv.items.map((i) => ({ ...i, id: i.id || uuid() })));
+        }
+      } else if (!isEditing) {
+        setCurrency(s.defaultCurrency || "USD");
+        setTaxRate(s.taxRate || 0);
+        nextInvoiceNumber(s.invoicePrefix, s.nextInvoiceNumber).then(setInvoiceNumber);
+      }
     });
-  }, []);
+  }, [initialInvoiceId, initialData, isEditing]);
 
   const selectedClient = clients.find((c) => c.id === selectedClientId);
 
@@ -174,7 +216,7 @@ export function InvoiceForm() {
 
     setSavingStatus(status);
     try {
-      const invoice = await createInvoiceTransaction({
+      const payload = {
         invoiceNumber: invoiceNumber.trim(),
         clientId: selectedClientId,
         status,
@@ -188,15 +230,36 @@ export function InvoiceForm() {
           quantity: Number(i.quantity) || 1,
           rate: Number(i.rate) || 0,
         })),
-      });
+      };
 
-      toast.success(
-        status === "draft"
-          ? `Invoice ${invoice.invoiceNumber} saved as draft!`
-          : `Invoice ${invoice.invoiceNumber} finalized and created!`,
-      );
+      if (isEditing && (initialInvoiceId || initialData?.id)) {
+        const idToUpdate = initialInvoiceId || initialData!.id;
+        const updated = await updateInvoiceTransaction({
+          id: idToUpdate,
+          ...payload,
+        });
 
-      navigate({ to: `/invoices/$id`, params: { id: invoice.id } });
+        toast.success(`Invoice ${updated.invoiceNumber} updated successfully!`);
+        if (onSuccess) {
+          onSuccess(updated.id);
+        } else {
+          navigate({ to: `/invoices/$id`, params: { id: updated.id } });
+        }
+      } else {
+        const invoice = await createInvoiceTransaction(payload);
+
+        toast.success(
+          status === "draft"
+            ? `Invoice ${invoice.invoiceNumber} saved as draft!`
+            : `Invoice ${invoice.invoiceNumber} finalized and created!`,
+        );
+
+        if (onSuccess) {
+          onSuccess(invoice.id);
+        } else {
+          navigate({ to: `/invoices/$id`, params: { id: invoice.id } });
+        }
+      }
     } catch (err) {
       console.error("Failed to save invoice:", err);
       toast.error("Failed to save invoice to database.");
@@ -717,23 +780,23 @@ export function InvoiceForm() {
 
               {/* Action Buttons */}
               <div className="space-y-3 pt-2">
-                {/* Save & Finalize */}
+                {/* Save & Finalize / Save Changes */}
                 <Button
                   type="button"
                   size="lg"
                   disabled={savingStatus !== null}
-                  onClick={() => handleSave("sent")}
+                  onClick={() => handleSave(isEditing ? (initialData?.status || "sent") : "sent")}
                   className="w-full gap-2 font-medium cursor-pointer shadow-sm"
                 >
-                  {savingStatus === "sent" ? (
+                  {savingStatus === "sent" || (isEditing && savingStatus !== null && savingStatus !== "draft") ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Finalizing invoice…
+                      {isEditing ? "Updating invoice…" : "Finalizing invoice…"}
                     </>
                   ) : (
                     <>
                       <Send className="h-4 w-4" />
-                      Save & Finalize
+                      {isEditing ? "Update & Save Invoice" : "Save & Finalize"}
                     </>
                   )}
                 </Button>
@@ -760,16 +823,24 @@ export function InvoiceForm() {
                   )}
                 </Button>
 
-                {/* Cancel */}
+                {/* Cancel / Discard */}
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   disabled={savingStatus !== null}
-                  onClick={() => navigate({ to: "/invoices" })}
+                  onClick={() => {
+                    if (onCancel) {
+                      onCancel();
+                    } else if (isEditing && (initialInvoiceId || initialData?.id)) {
+                      navigate({ to: "/invoices/$id", params: { id: initialInvoiceId || initialData!.id } });
+                    } else {
+                      navigate({ to: "/invoices" });
+                    }
+                  }}
                   className="w-full text-xs text-muted-foreground hover:text-foreground cursor-pointer"
                 >
-                  Discard & Return
+                  {isEditing ? "Cancel Edit" : "Discard & Return"}
                 </Button>
               </div>
             </div>
