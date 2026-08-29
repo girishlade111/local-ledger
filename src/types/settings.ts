@@ -9,4 +9,5 @@ export interface Settings {
   defaultCurrency: string;
   invoicePrefix: string;
   nextInvoiceNumber: number;
+  lastBackupDate?: string;
 }

@@ -1,17 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { ClientOnly, createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { format, subMonths } from "date-fns";
+import { differenceInDays, format, formatDistanceToNow, parseISO, subMonths } from "date-fns";
+import { toast } from "sonner";
 import {
   AlertCircle,
+  AlertTriangle,
   ArrowRight,
-  ArrowUpRight,
   BarChart3,
   Calendar,
   CheckCircle2,
   Clock,
   DollarSign,
+  DownloadCloud,
   FileText,
   Plus,
+  ShieldAlert,
   TrendingUp,
   UserPlus,
   Users,
@@ -33,6 +36,7 @@ import { StatusBadge, getEffectiveStatus } from "@/components/InvoiceList";
 import { listClients } from "@/db/clients";
 import { listFullInvoices, type FullInvoice } from "@/db/full-invoice";
 import { getSettings } from "@/db/settings";
+import { exportDatabaseBackup } from "@/utils/backup";
 import { invoiceTotal } from "@/types/invoice";
 import type { Client } from "@/types/client";
 import type { Settings } from "@/types/settings";
@@ -71,6 +75,7 @@ function DashboardContent() {
   const [clients, setClients] = useState<Client[] | null>(null);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [newClientOpen, setNewClientOpen] = useState(false);
+  const [quickExporting, setQuickExporting] = useState(false);
 
   const refresh = async () => {
     const [invList, clientList, appSettings] = await Promise.all([
@@ -181,6 +186,39 @@ function DashboardContent() {
     return months;
   }, [invoices]);
 
+  // Backup Reminder Calculation: Show if no backup taken in 30+ days or never taken with active data
+  const daysSinceLastBackup = useMemo(() => {
+    if (!settings?.lastBackupDate) return null;
+    try {
+      return differenceInDays(new Date(), parseISO(settings.lastBackupDate));
+    } catch {
+      return null;
+    }
+  }, [settings]);
+
+  const shouldShowBackupReminder = useMemo(() => {
+    const hasData = (invoices && invoices.length > 0) || (clients && clients.length > 0);
+    if (!hasData) return false;
+    if (daysSinceLastBackup === null) return true; // never backed up
+    return daysSinceLastBackup >= 30;
+  }, [daysSinceLastBackup, invoices, clients]);
+
+  const handleQuickExportBackup = async () => {
+    setQuickExporting(true);
+    try {
+      const { summary } = await exportDatabaseBackup();
+      toast.success(
+        `Backup downloaded (${summary.invoicesCount} invoices, ${summary.clientsCount} clients)!`,
+      );
+      await refresh();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to export backup.");
+    } finally {
+      setQuickExporting(false);
+    }
+  };
+
   if (invoices === null || clients === null) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-16 text-center text-muted-foreground">
@@ -232,6 +270,56 @@ function DashboardContent() {
           </Button>
         </div>
       </header>
+
+      {/* Backup Reminder Banner (Shows if no backup taken in 30+ days or never taken) */}
+      {shouldShowBackupReminder && (
+        <div className="relative overflow-hidden rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 sm:p-5 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-300">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div className="space-y-0.5">
+                <h3 className="font-display text-sm font-semibold text-amber-950 dark:text-amber-200">
+                  Data Backup Reminder
+                </h3>
+                <p className="text-xs text-amber-800/90 dark:text-amber-300/90 leading-relaxed">
+                  {settings?.lastBackupDate ? (
+                    <>
+                      Your last backup was exported{" "}
+                      <strong>
+                        {formatDistanceToNow(parseISO(settings.lastBackupDate), {
+                          addSuffix: true,
+                        })}
+                      </strong>
+                      . Since all data is stored offline on this device, export a backup regularly to prevent data loss.
+                    </>
+                  ) : (
+                    <>
+                      You haven't exported an offline database backup yet. Since Local Ledger operates entirely on this device, download a JSON backup to protect against browser cache clearing.
+                    </>
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+              <Button
+                size="sm"
+                onClick={handleQuickExportBackup}
+                disabled={quickExporting}
+                className="bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs gap-1.5 h-8 cursor-pointer shadow-xs"
+              >
+                <DownloadCloud className="h-3.5 w-3.5" />
+                {quickExporting ? "Exporting…" : "Export Backup Now"}
+              </Button>
+              <Button asChild size="sm" variant="ghost" className="text-xs h-8 text-amber-900 dark:text-amber-200">
+                <Link to="/settings">Settings</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 4 KPI Summary Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
