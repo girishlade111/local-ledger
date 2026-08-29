@@ -9,4 +9,11 @@ export interface Settings {
   defaultCurrency: string;
   invoicePrefix: string;
   nextInvoiceNumber: number;
+  lastBackupDate?: string | undefined;
+  licenseKey?: string | undefined;
+  isPro?: boolean | undefined;
+  proActivatedAt?: string | undefined;
+  proTier?: string | undefined;
+  customPdfColor?: string | undefined;
+  hidePdfWatermark?: boolean | undefined;
 }
