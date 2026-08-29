@@ -24,7 +24,10 @@ export interface BackupData {
 /**
  * Export all IndexedDB tables as a JSON file and update lastBackupDate in settings
  */
-export async function exportDatabaseBackup(): Promise<{ filename: string; summary: BackupData["summary"] }> {
+export async function exportDatabaseBackup(): Promise<{
+  filename: string;
+  summary: BackupData["summary"];
+}> {
   const [clients, invoices, invoiceItems, settings] = await Promise.all([
     db.clients.toArray(),
     db.invoices.toArray(),

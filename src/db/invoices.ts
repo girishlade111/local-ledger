@@ -190,5 +190,3 @@ export async function updateInvoiceTransaction(data: UpdateInvoicePayload): Prom
   if (!updated) throw new Error("Updated invoice not found");
   return updated;
 }
-
-

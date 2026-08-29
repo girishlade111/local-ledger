@@ -19,15 +19,7 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { Button } from "@/components/ui/button";
 import { CreateClientDialog } from "@/components/CreateClientDialog";
@@ -258,14 +250,12 @@ function DashboardContent() {
             onClick={() => setNewClientOpen(true)}
             className="gap-1.5 shadow-sm text-xs font-medium cursor-pointer"
           >
-            <UserPlus className="h-4 w-4" />
-            + New Client
+            <UserPlus className="h-4 w-4" />+ New Client
           </Button>
 
           <Button asChild className="gap-1.5 shadow-sm text-xs font-medium cursor-pointer">
             <Link to="/invoices/new">
-              <Plus className="h-4 w-4" />
-              + New Invoice
+              <Plus className="h-4 w-4" />+ New Invoice
             </Link>
           </Button>
         </div>
@@ -292,11 +282,14 @@ function DashboardContent() {
                           addSuffix: true,
                         })}
                       </strong>
-                      . Since all data is stored offline on this device, export a backup regularly to prevent data loss.
+                      . Since all data is stored offline on this device, export a backup regularly
+                      to prevent data loss.
                     </>
                   ) : (
                     <>
-                      You haven't exported an offline database backup yet. Since Local Ledger operates entirely on this device, download a JSON backup to protect against browser cache clearing.
+                      You haven't exported an offline database backup yet. Since Local Ledger
+                      operates entirely on this device, download a JSON backup to protect against
+                      browser cache clearing.
                     </>
                   )}
                 </p>
@@ -313,7 +306,12 @@ function DashboardContent() {
                 <DownloadCloud className="h-3.5 w-3.5" />
                 {quickExporting ? "Exporting…" : "Export Backup Now"}
               </Button>
-              <Button asChild size="sm" variant="ghost" className="text-xs h-8 text-amber-900 dark:text-amber-200">
+              <Button
+                asChild
+                size="sm"
+                variant="ghost"
+                className="text-xs h-8 text-amber-900 dark:text-amber-200"
+              >
                 <Link to="/settings">Settings</Link>
               </Button>
             </div>
@@ -438,7 +436,11 @@ function DashboardContent() {
         <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="oklch(0.89 0.018 80 / 0.4)" />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                vertical={false}
+                stroke="oklch(0.89 0.018 80 / 0.4)"
+              />
               <XAxis
                 dataKey="name"
                 tickLine={false}
@@ -481,8 +483,18 @@ function DashboardContent() {
                   return null;
                 }}
               />
-              <Bar dataKey="invoiced" fill="oklch(0.42 0.11 155)" radius={[4, 4, 0, 0]} maxBarSize={36} />
-              <Bar dataKey="paid" fill="oklch(0.6 0.16 155)" radius={[4, 4, 0, 0]} maxBarSize={36} />
+              <Bar
+                dataKey="invoiced"
+                fill="oklch(0.42 0.11 155)"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={36}
+              />
+              <Bar
+                dataKey="paid"
+                fill="oklch(0.6 0.16 155)"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={36}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -497,7 +509,12 @@ function DashboardContent() {
             </h2>
             <p className="text-xs text-muted-foreground">Last 5 invoices issued on this device.</p>
           </div>
-          <Button asChild variant="ghost" size="sm" className="gap-1 text-xs font-medium text-primary">
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="gap-1 text-xs font-medium text-primary"
+          >
             <Link to="/invoices">
               View all invoices
               <ArrowRight className="h-3.5 w-3.5" />
@@ -577,7 +594,10 @@ function DashboardContent() {
                         <td className="py-3.5 px-4 text-center whitespace-nowrap">
                           <StatusBadge status={effective} />
                         </td>
-                        <td className="py-3.5 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        <td
+                          className="py-3.5 px-4 text-right whitespace-nowrap"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Button asChild size="sm" variant="ghost" className="h-7 text-xs px-2.5">
                             <Link to="/invoices/$id" params={{ id: inv.id }}>
                               View

@@ -78,9 +78,7 @@ export function InvoiceForm({
   const navigate = useNavigate();
   const [settings, setSettings] = useState<Settings | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
-  const [selectedClientId, setSelectedClientId] = useState<string>(
-    initialData?.clientId || "",
-  );
+  const [selectedClientId, setSelectedClientId] = useState<string>(initialData?.clientId || "");
   const [createClientOpen, setCreateClientOpen] = useState(false);
 
   const [invoiceNumber, setInvoiceNumber] = useState(initialData?.invoiceNumber || "");
@@ -488,11 +486,12 @@ export function InvoiceForm({
                         <SelectItem key={curr.code} value={curr.code} className="cursor-pointer">
                           <span className="font-mono font-medium">{curr.code}</span> ({curr.symbol})
                           — {curr.name}
-                          {!settings?.isPro && curr.code !== (settings?.defaultCurrency || "USD") && (
-                            <span className="ml-2 rounded bg-primary/10 px-1.5 py-0.2 text-[10px] font-semibold text-primary">
-                              PRO
-                            </span>
-                          )}
+                          {!settings?.isPro &&
+                            curr.code !== (settings?.defaultCurrency || "USD") && (
+                              <span className="ml-2 rounded bg-primary/10 px-1.5 py-0.2 text-[10px] font-semibold text-primary">
+                                PRO
+                              </span>
+                            )}
                         </SelectItem>
                       ))}
                     </SelectGroup>
@@ -820,10 +819,11 @@ export function InvoiceForm({
                   type="button"
                   size="lg"
                   disabled={savingStatus !== null}
-                  onClick={() => handleSave(isEditing ? (initialData?.status || "sent") : "sent")}
+                  onClick={() => handleSave(isEditing ? initialData?.status || "sent" : "sent")}
                   className="w-full gap-2 font-medium cursor-pointer shadow-sm"
                 >
-                  {savingStatus === "sent" || (isEditing && savingStatus !== null && savingStatus !== "draft") ? (
+                  {savingStatus === "sent" ||
+                  (isEditing && savingStatus !== null && savingStatus !== "draft") ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
                       {isEditing ? "Updating invoice…" : "Finalizing invoice…"}
@@ -868,7 +868,10 @@ export function InvoiceForm({
                     if (onCancel) {
                       onCancel();
                     } else if (isEditing && (initialInvoiceId || initialData?.id)) {
-                      navigate({ to: "/invoices/$id", params: { id: initialInvoiceId || initialData!.id } });
+                      navigate({
+                        to: "/invoices/$id",
+                        params: { id: initialInvoiceId || initialData!.id },
+                      });
                     } else {
                       navigate({ to: "/invoices" });
                     }

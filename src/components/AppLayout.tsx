@@ -76,9 +76,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             <Sparkles className="h-3 w-3 animate-pulse" />
           </Link>
         )}
-        <div className="text-[11px] text-muted-foreground">
-          All data stays on this device.
-        </div>
+        <div className="text-[11px] text-muted-foreground">All data stays on this device.</div>
       </div>
     </div>
   );

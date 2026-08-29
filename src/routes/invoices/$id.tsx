@@ -26,11 +26,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { InvoiceForm } from "@/components/InvoiceForm";
 import { StatusBadge, getEffectiveStatus } from "@/components/InvoiceList";
 import { getFullInvoice, type FullInvoice } from "@/db/full-invoice";
-import {
-  deleteInvoice,
-  duplicateInvoiceTransaction,
-  updateInvoice,
-} from "@/db/invoices";
+import { deleteInvoice, duplicateInvoiceTransaction, updateInvoice } from "@/db/invoices";
 import { getSettings } from "@/db/settings";
 import type { InvoiceStatus } from "@/types/invoice";
 import type { Settings } from "@/types/settings";
@@ -47,7 +43,11 @@ export const Route = createFileRoute("/invoices/$id")({
   component: InvoiceDetailPage,
 });
 
-const statuses: Array<{ value: InvoiceStatus; label: string; icon: any }> = [
+const statuses: Array<{
+  value: InvoiceStatus;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}> = [
   { value: "draft", label: "Draft", icon: FileText },
   { value: "sent", label: "Sent", icon: Send },
   { value: "paid", label: "Paid", icon: CheckCircle2 },
@@ -85,7 +85,8 @@ function InvoiceDetail({ id }: { id: string }) {
   };
 
   useEffect(() => {
-    refresh();
+    getFullInvoice(id).then((inv) => setInvoice(inv));
+    getSettings().then((s) => setSettings(s));
   }, [id]);
 
   if (invoice === undefined) {
@@ -345,9 +346,7 @@ function InvoiceDetail({ id }: { id: string }) {
 
           {/* Invoice Meta */}
           <div className="text-left sm:text-right space-y-1">
-            <h1 className="font-display text-3xl font-bold tracking-tight text-primary">
-              INVOICE
-            </h1>
+            <h1 className="font-display text-3xl font-bold tracking-tight text-primary">INVOICE</h1>
             <p className="font-mono text-base font-semibold text-foreground">
               #{invoice.invoiceNumber}
             </p>
@@ -426,8 +425,7 @@ function InvoiceDetail({ id }: { id: string }) {
               </thead>
               <tbody className="divide-y divide-border/60">
                 {invoice.items.map((item, index) => {
-                  const lineAmount =
-                    (Number(item.quantity) || 0) * (Number(item.rate) || 0);
+                  const lineAmount = (Number(item.quantity) || 0) * (Number(item.rate) || 0);
                   return (
                     <tr key={item.id || index} className="hover:bg-muted/10">
                       <td className="py-3.5 px-4 text-center font-mono text-xs text-muted-foreground">

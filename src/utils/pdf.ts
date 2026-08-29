@@ -254,9 +254,30 @@ export async function invoiceToPdfBlob(invoice: FullInvoice, customSettings?: Se
   const colAmount = margin + contentWidth - 10;
 
   drawText("DESCRIPTION", { x: colDesc, y: y + 2, size: 8, bold: true, color: colorMuted });
-  drawText("QTY", { x: colQty + 20, y: y + 2, size: 8, bold: true, color: colorMuted, align: "right" });
-  drawText("RATE", { x: colRate + 30, y: y + 2, size: 8, bold: true, color: colorMuted, align: "right" });
-  drawText("AMOUNT", { x: colAmount, y: y + 2, size: 8, bold: true, color: colorMuted, align: "right" });
+  drawText("QTY", {
+    x: colQty + 20,
+    y: y + 2,
+    size: 8,
+    bold: true,
+    color: colorMuted,
+    align: "right",
+  });
+  drawText("RATE", {
+    x: colRate + 30,
+    y: y + 2,
+    size: 8,
+    bold: true,
+    color: colorMuted,
+    align: "right",
+  });
+  drawText("AMOUNT", {
+    x: colAmount,
+    y: y + 2,
+    size: 8,
+    bold: true,
+    color: colorMuted,
+    align: "right",
+  });
 
   y -= 8;
   page.drawLine({
@@ -268,7 +289,10 @@ export async function invoiceToPdfBlob(invoice: FullInvoice, customSettings?: Se
 
   // Items Rows
   const currency = invoice.currency || "USD";
-  const subtotal = invoice.items.reduce((s, i) => s + (Number(i.quantity) || 0) * (Number(i.rate) || 0), 0);
+  const subtotal = invoice.items.reduce(
+    (s, i) => s + (Number(i.quantity) || 0) * (Number(i.rate) || 0),
+    0,
+  );
   const taxRate = invoice.taxRate ?? 0;
   const taxAmount = subtotal * (taxRate / 100);
   const total = subtotal + taxAmount;

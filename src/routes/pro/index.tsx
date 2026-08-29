@@ -25,10 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getSettings, updateSettings } from "@/db/settings";
-import {
-  SAMPLE_PRO_KEYS,
-  validateLicenseKey,
-} from "@/utils/license";
+import { SAMPLE_PRO_KEYS, validateLicenseKey } from "@/utils/license";
 import type { Settings } from "@/types/settings";
 
 export const Route = createFileRoute("/pro/")({
@@ -37,7 +34,8 @@ export const Route = createFileRoute("/pro/")({
       { title: "Upgrade to PRO — Local Ledger" },
       {
         name: "description",
-        content: "Unlock advanced offline invoicing features, custom branding, multi-currency, and clean PDFs.",
+        content:
+          "Unlock advanced offline invoicing features, custom branding, multi-currency, and clean PDFs.",
       },
     ],
   }),
@@ -274,7 +272,8 @@ function ProContent() {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                No server request needed. The cryptographic checksum is validated instantly on your device.
+                No server request needed. The cryptographic checksum is validated instantly on your
+                device.
               </p>
             </div>
 
@@ -311,7 +310,8 @@ function ProContent() {
             Free vs. PRO Comparison
           </h2>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            Free tier remains completely functional for simple invoicing. PRO unlocks advanced flexibility.
+            Free tier remains completely functional for simple invoicing. PRO unlocks advanced
+            flexibility.
           </p>
         </div>
 
@@ -320,7 +320,9 @@ function ProContent() {
           <div className="rounded-xl border border-border bg-card p-6 shadow-paper space-y-5">
             <div className="border-b border-border/70 pb-3">
               <h3 className="font-display text-lg font-bold text-foreground">Free Tier</h3>
-              <p className="text-xs text-muted-foreground">Everything you need for essential offline invoicing.</p>
+              <p className="text-xs text-muted-foreground">
+                Everything you need for essential offline invoicing.
+              </p>
               <div className="mt-3">
                 <span className="font-display text-2xl font-bold text-foreground">$0</span>
                 <span className="text-xs text-muted-foreground ml-1.5">Forever Free</span>
@@ -372,10 +374,14 @@ function ProContent() {
 
             <div className="border-b border-border/70 pb-3">
               <h3 className="font-display text-lg font-bold text-foreground">PRO License</h3>
-              <p className="text-xs text-muted-foreground">For growing freelancers and boutique agencies.</p>
+              <p className="text-xs text-muted-foreground">
+                For growing freelancers and boutique agencies.
+              </p>
               <div className="mt-3">
                 <span className="font-display text-2xl font-bold text-primary">$29</span>
-                <span className="text-xs text-muted-foreground ml-1.5">One-time payment (Lifetime)</span>
+                <span className="text-xs text-muted-foreground ml-1.5">
+                  One-time payment (Lifetime)
+                </span>
               </div>
             </div>
 

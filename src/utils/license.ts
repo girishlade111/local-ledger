@@ -29,7 +29,11 @@ export function generateLicenseKey(
   customerTag: string = "PRO",
   tier: "LIFETIME" | "ANNUAL" = "LIFETIME",
 ): string {
-  const cleanTag = customerTag.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8) || "CLIENT";
+  const cleanTag =
+    customerTag
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .slice(0, 8) || "CLIENT";
   const payload = `${tier}-${cleanTag}`;
   const checksum = calculateChecksum(payload);
   return `LLPRO-${payload}-${checksum}`;
@@ -84,7 +88,10 @@ export function validateLicenseKey(rawKey: string): LicenseValidationResult {
 
   const expectedChecksum = calculateChecksum(`${tier}-${customerTag}`);
   if (providedChecksum !== expectedChecksum) {
-    return { isValid: false, error: "Invalid license signature or key. Please verify your purchase receipt." };
+    return {
+      isValid: false,
+      error: "Invalid license signature or key. Please verify your purchase receipt.",
+    };
   }
 
   return {

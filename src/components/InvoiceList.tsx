@@ -37,11 +37,7 @@ import {
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/EmptyState";
 import { listFullInvoices, type FullInvoice } from "@/db/full-invoice";
-import {
-  deleteInvoice,
-  duplicateInvoiceTransaction,
-  updateInvoice,
-} from "@/db/invoices";
+import { deleteInvoice, duplicateInvoiceTransaction, updateInvoice } from "@/db/invoices";
 import { invoiceTotal, type InvoiceStatus } from "@/types/invoice";
 import { money, shortDate } from "@/utils/format";
 import { downloadInvoicePdf } from "@/utils/pdf";
@@ -92,12 +88,7 @@ export function StatusBadge({ status }: { status: EffectiveStatus }) {
 }
 
 type SortOption =
-  | "date_desc"
-  | "date_asc"
-  | "due_asc"
-  | "amount_desc"
-  | "amount_asc"
-  | "number_desc";
+  "date_desc" | "date_asc" | "due_asc" | "amount_desc" | "amount_asc" | "number_desc";
 
 export function InvoiceList() {
   const navigate = useNavigate();
@@ -174,11 +165,20 @@ export function InvoiceList() {
 
         switch (sortBy) {
           case "date_desc":
-            return new Date(b.issueDate || b.createdAt).getTime() - new Date(a.issueDate || a.createdAt).getTime();
+            return (
+              new Date(b.issueDate || b.createdAt).getTime() -
+              new Date(a.issueDate || a.createdAt).getTime()
+            );
           case "date_asc":
-            return new Date(a.issueDate || a.createdAt).getTime() - new Date(b.issueDate || b.createdAt).getTime();
+            return (
+              new Date(a.issueDate || a.createdAt).getTime() -
+              new Date(b.issueDate || b.createdAt).getTime()
+            );
           case "due_asc":
-            return new Date(a.dueDate || "9999-12-31").getTime() - new Date(b.dueDate || "9999-12-31").getTime();
+            return (
+              new Date(a.dueDate || "9999-12-31").getTime() -
+              new Date(b.dueDate || "9999-12-31").getTime()
+            );
           case "amount_desc":
             return totalB - totalA;
           case "amount_asc":
@@ -528,9 +528,7 @@ export function InvoiceList() {
                               </DropdownMenuItem>
 
                               <DropdownMenuItem
-                                onClick={() =>
-                                  handleDuplicate(invoice.id, invoice.invoiceNumber)
-                                }
+                                onClick={() => handleDuplicate(invoice.id, invoice.invoiceNumber)}
                                 className="cursor-pointer gap-2"
                               >
                                 <Copy className="h-4 w-4" />
@@ -581,9 +579,7 @@ export function InvoiceList() {
                               <DropdownMenuSeparator />
 
                               <DropdownMenuItem
-                                onClick={() =>
-                                  handleDelete(invoice.id, invoice.invoiceNumber)
-                                }
+                                onClick={() => handleDelete(invoice.id, invoice.invoiceNumber)}
                                 className="cursor-pointer gap-2 text-destructive focus:text-destructive"
                               >
                                 <Trash2 className="h-4 w-4" />

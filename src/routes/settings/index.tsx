@@ -60,10 +60,7 @@ import {
   validateBackupData,
   type BackupData,
 } from "@/utils/backup";
-import {
-  SAMPLE_PRO_KEYS,
-  validateLicenseKey,
-} from "@/utils/license";
+import { SAMPLE_PRO_KEYS, validateLicenseKey } from "@/utils/license";
 import { CURRENCIES, getCurrencyByCode } from "@/utils/currencies";
 import type { Settings } from "@/types/settings";
 import { SETTINGS_ID } from "@/types/settings";
@@ -74,7 +71,8 @@ export const Route = createFileRoute("/settings/")({
       { title: "Settings — Local Ledger" },
       {
         name: "description",
-        content: "Manage your business details, default currency, invoice numbering, licensing, and backup data.",
+        content:
+          "Manage your business details, default currency, invoice numbering, licensing, and backup data.",
       },
     ],
   }),
@@ -394,7 +392,9 @@ function SettingsForm() {
         const parsed = JSON.parse(text);
 
         if (!validateBackupData(parsed)) {
-          toast.error("Invalid backup file format. Please select a valid Local Ledger backup JSON.");
+          toast.error(
+            "Invalid backup file format. Please select a valid Local Ledger backup JSON.",
+          );
           return;
         }
 
@@ -685,9 +685,7 @@ function SettingsForm() {
                 </div>
 
                 <Button asChild variant="ghost" size="sm" className="text-xs text-primary gap-1">
-                  <Link to="/pro">
-                    {isPro ? "View Features" : "Upgrade to PRO →"}
-                  </Link>
+                  <Link to="/pro">{isPro ? "View Features" : "Upgrade to PRO →"}</Link>
                 </Button>
               </div>
 
@@ -717,7 +715,10 @@ function SettingsForm() {
                   {/* PRO Unlocked Feature: Custom PDF Accent Color */}
                   <div className="space-y-2 pt-1">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="pdf-color" className="text-sm font-medium flex items-center gap-1.5">
+                      <Label
+                        htmlFor="pdf-color"
+                        className="text-sm font-medium flex items-center gap-1.5"
+                      >
                         <Palette className="h-4 w-4 text-primary" />
                         Custom PDF Branding Accent Color
                       </Label>
@@ -852,7 +853,8 @@ function SettingsForm() {
                   >
                     <SelectTrigger id="currency-select" className="bg-background/80 w-full">
                       <SelectValue placeholder="Select currency">
-                        {selectedCurrency.code} ({selectedCurrency.symbol}) — {selectedCurrency.name}
+                        {selectedCurrency.code} ({selectedCurrency.symbol}) —{" "}
+                        {selectedCurrency.name}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent className="max-h-72">
@@ -960,7 +962,9 @@ function SettingsForm() {
               <div className="flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 p-3.5">
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-primary" />
-                  <span className="text-xs font-medium text-foreground">Next generated invoice:</span>
+                  <span className="text-xs font-medium text-foreground">
+                    Next generated invoice:
+                  </span>
                 </div>
                 <span className="rounded-md border border-primary/30 bg-card px-2.5 py-1 font-mono text-xs font-semibold text-primary shadow-xs">
                   {sampleInvoiceNumber}
@@ -998,7 +1002,8 @@ function SettingsForm() {
                   <span className="font-medium text-foreground">
                     {lastBackupText ? (
                       <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                        {format(parseISO(settings.lastBackupDate!), "yyyy-MM-dd HH:mm")} ({lastBackupText})
+                        {format(parseISO(settings.lastBackupDate!), "yyyy-MM-dd HH:mm")} (
+                        {lastBackupText})
                       </span>
                     ) : (
                       <span className="text-amber-600 dark:text-amber-400 font-semibold">
@@ -1054,8 +1059,9 @@ function SettingsForm() {
               </div>
 
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Exporting creates a full JSON snapshot of all clients, invoices, items, settings, and license data.
-                Keep regular backups to safeguard against accidental browser clearing.
+                Exporting creates a full JSON snapshot of all clients, invoices, items, settings,
+                and license data. Keep regular backups to safeguard against accidental browser
+                clearing.
               </p>
             </section>
           </div>
