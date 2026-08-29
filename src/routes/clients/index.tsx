@@ -65,15 +65,11 @@ function ClientsContent() {
         <EmptyState
           title="No clients yet"
           description="Add a client to start creating invoices for them."
-          action={
-            <Button onClick={() => setShowForm(true)}>Add client</Button>
-          }
+          action={<Button onClick={() => setShowForm(true)}>Add client</Button>}
         />
       ) : (
         <>
-          {!showForm && (
-            <Button onClick={() => setShowForm(true)}>Add client</Button>
-          )}
+          {!showForm && <Button onClick={() => setShowForm(true)}>Add client</Button>}
 
           {showForm && (
             <form

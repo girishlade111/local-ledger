@@ -25,7 +25,13 @@ export const deleteInvoice = async (id: string) => {
   await db.invoices.delete(id);
 };
 
+export function formatInvoiceNumber(prefix: string, number: number) {
+  const cleanPrefix = (prefix || "INV").trim();
+  const sep = cleanPrefix.endsWith("-") || cleanPrefix.endsWith("/") ? "" : "-";
+  return `${cleanPrefix}${sep}${String(number).padStart(4, "0")}`;
+}
+
 export async function nextInvoiceNumber(prefix: string, nextNumber: number) {
   const count = await db.invoices.count();
-  return `${prefix}-${String(nextNumber + count).padStart(4, "0")}`;
+  return formatInvoiceNumber(prefix, nextNumber + count);
 }

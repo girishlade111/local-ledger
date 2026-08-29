@@ -41,11 +41,7 @@ export function InvoiceList() {
           key={invoice.id}
           className="flex flex-wrap items-center gap-4 rounded-lg border border-border bg-card p-4 shadow-paper"
         >
-          <Link
-            to="/invoices/$id"
-            params={{ id: invoice.id }}
-            className="min-w-40 flex-1"
-          >
+          <Link to="/invoices/$id" params={{ id: invoice.id }} className="min-w-40 flex-1">
             <p className="font-display text-lg hover:underline">
               {invoice.client?.name || "Untitled client"}
             </p>

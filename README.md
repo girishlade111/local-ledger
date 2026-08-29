@@ -20,15 +20,15 @@ Set up folder structure:
 
 /src
 
-  /components
+/components
 
-  /pages
+/pages
 
-  /db
+/db
 
-  /utils
+/utils
 
-  /types
+/types
 
 No backend, no auth, no cloud storage anywhere in this project. All data stays in browser IndexedDB. Confirm setup by running dev server successfully.
 

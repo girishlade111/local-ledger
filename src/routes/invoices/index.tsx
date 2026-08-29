@@ -15,9 +15,7 @@ function InvoicesPage() {
       <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl tracking-tight">Invoices</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            All invoices stored on this device.
-          </p>
+          <p className="mt-2 text-sm text-muted-foreground">All invoices stored on this device.</p>
         </div>
         <Button asChild>
           <Link to="/invoices/new">New invoice</Link>

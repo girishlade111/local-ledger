@@ -119,10 +119,7 @@ function InvoiceDetail({ id }: { id: string }) {
             <span className="text-right">Amount</span>
           </div>
           {invoice.items.map((item) => (
-            <div
-              key={item.id}
-              className="grid grid-cols-[1fr_5rem_7rem_7rem] gap-2 text-sm"
-            >
+            <div key={item.id} className="grid grid-cols-[1fr_5rem_7rem_7rem] gap-2 text-sm">
               <span>{item.description || "-"}</span>
               <span className="text-right">{item.quantity}</span>
               <span className="text-right">{money(item.rate)}</span>

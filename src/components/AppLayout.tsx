@@ -2,13 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: "Dashboard" },
@@ -23,9 +17,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
     <nav className="flex flex-col gap-1">
       {navItems.map((item) => {
         const active =
-          item.to === "/"
-            ? path === "/"
-            : path === item.to || path.startsWith(`${item.to}/`);
+          item.to === "/" ? path === "/" : path === item.to || path.startsWith(`${item.to}/`);
         return (
           <Link
             key={item.to}

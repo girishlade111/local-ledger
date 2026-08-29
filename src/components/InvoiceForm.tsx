@@ -176,7 +176,9 @@ export function InvoiceForm() {
                 variant="ghost"
                 size="icon"
                 aria-label="Remove item"
-                onClick={() => setItems((p) => (p.length > 1 ? p.filter((i) => i.id !== item.id) : p))}
+                onClick={() =>
+                  setItems((p) => (p.length > 1 ? p.filter((i) => i.id !== item.id) : p))
+                }
               >
                 ×
               </Button>
