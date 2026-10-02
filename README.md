@@ -246,3 +246,9 @@ The application will be accessible at `http://localhost:8080/`.
 ## 📄 License
 
 This project is licensed under the **MIT License**.
+
+---
+
+## Author
+
+**Built by Girish Lade** — https://ladestack.in
